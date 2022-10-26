@@ -1,0 +1,12 @@
+﻿<tr class="item">
+	<td>##id</td>
+	<td>##name</td>
+	<td>##amazonPreviousPrice</td>
+	<td>##amazonCurrentPrice</td>
+	<td>##trendyolPreviousPrice</td>
+	<td>##trendyolCurrentPrice</td>
+	<td>##requestedDifferenceAsAmount</td>
+	<td>##requestedDifferenceAsPercentage</td>
+	<td>##calculatedDifferenceAsAmount</td>
+	<td>##calculatedDifferenceAsPercentage</td>
+</tr>

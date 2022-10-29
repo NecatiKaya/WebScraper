@@ -110,7 +110,7 @@ public class ProductsController : ControllerBase
     [HttpPost("crawl")]
     public async Task<IActionResult> Crawl()
     {
-        await new WebScraperBusiness(_webScraperDbContext, _mailSender).CrawlAllProducts();
+        await new WebScraperBusiness(_webScraperDbContext, _mailSender).CrawlAllProductsV3();
         return Ok();
     }
 }

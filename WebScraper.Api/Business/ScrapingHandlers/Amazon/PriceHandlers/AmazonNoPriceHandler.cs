@@ -7,7 +7,6 @@ public class AmazonNoPriceHandler : AmazonPriceHandlerBase
 {
     public override ProductPriceInformation? HandleRequst(HtmlDocument doc)
     {
-
         HtmlNode? priceAvailability = doc.GetElementbyId("availability_feature_div");
         if (priceAvailability != null && priceAvailability.HasChildNodes)
         {

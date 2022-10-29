@@ -343,11 +343,136 @@ public class WebScraperBusiness
         Console.WriteLine(stopwatch.Elapsed);
     }
 
+    public async Task CrawlAllProductsV2()
+    {
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        stopwatch.Start();
+
+        List<Task<HtmlInfos>> tasks = new List<Task<HtmlInfos>>();
+        ServerResponse<Product> activeProductsResponse = await GetActiveProducts();
+        int batchSize = 10;
+        int numberOfBatches = (int)Math.Ceiling((double)activeProductsResponse.TotalRowCount / batchSize);
+
+        for (int i = 0; i < numberOfBatches; i++)
+        {
+            IEnumerable<Product>? productsPerTask = activeProductsResponse.Data?.Skip(i * batchSize).Take(batchSize);
+            if (productsPerTask is null)
+            {
+                continue;
+            }
+            
+            IEnumerable<Task<HtmlInfos>>? crawlTasks = productsPerTask.Select(_product => CrawlProduct(_product));
+            if (crawlTasks is null)
+            {
+                continue;
+            }
+            IEnumerable<HtmlInfos> allHtmls = (await Task.WhenAll(crawlTasks));
+            List<ScraperVisit> visits = new List<ScraperVisit>();
+            foreach (HtmlInfos eachHtmlInfos in allHtmls)
+            {
+                IHtmlParser trendyolParser = new TrendyolParser(eachHtmlInfos.TrendyolHtmlInfo?.Html!);
+                IHtmlParser amazonParser = new AmazonParser(eachHtmlInfos.AmazonHtmlInfo?.Html!);
+
+                ProductPriceInformation? trendyolPriceInformation = trendyolParser.Parse();
+                ProductPriceInformation? amazonPriceInformation = amazonParser.Parse();
+
+                ScraperVisit visit = new ScraperVisit()
+                {
+                    //Product = eachHtmlInfos?.Product!,
+                    ProductId = eachHtmlInfos!.Product!.Id!,
+                    VisitDate = DateTime.Now,
+                    Notified = false
+                };
+                if (trendyolPriceInformation is not null)
+                {
+                    visit.TrendyolCurrentDiscountAsAmount = trendyolPriceInformation.CurrentDiscountAsAmount;
+                    visit.TrendyolCurrentDiscountAsPercentage = trendyolPriceInformation.CurrentDiscountAsPercentage;
+                    visit.TrendyolCurrentPrice = trendyolPriceInformation.CurrentPrice;
+                    visit.TrendyolPreviousPrice = trendyolPriceInformation.PreviousPrice;
+                }
+
+                if (amazonPriceInformation is not null)
+                {
+                    visit.AmazonCurrentDiscountAsAmount = amazonPriceInformation.CurrentDiscountAsAmount;
+                    visit.AmazonCurrentDiscountAsPercentage = amazonPriceInformation.CurrentDiscountAsPercentage;
+                    visit.AmazonCurrentPrice = amazonPriceInformation.CurrentPrice;
+                    visit.AmazonPreviousPrice = amazonPriceInformation.PreviousPrice;
+                }
+
+                if (trendyolPriceInformation is not null && amazonPriceInformation is not null)
+                {
+                    decimal calculatedDifferenceWithPercentage = 0;
+                    decimal calculatedDifferenceWithAmount = 0;
+                    bool needToNotify = false;
+
+                    calculatedDifferenceWithAmount = trendyolPriceInformation.CurrentPrice - amazonPriceInformation.CurrentPrice;
+                    calculatedDifferenceWithPercentage = calculatedDifferenceWithAmount * 100 / trendyolPriceInformation.CurrentPrice;
+
+                    if (eachHtmlInfos.Product.RequestedPriceDifferenceWithAmount is not null)
+                    {
+                        needToNotify = calculatedDifferenceWithAmount >= eachHtmlInfos.Product.RequestedPriceDifferenceWithAmount;
+                    }
+
+                    if (eachHtmlInfos.Product.RequestedPriceDifferenceWithPercentage is not null)
+                    {
+                        needToNotify = calculatedDifferenceWithPercentage >= eachHtmlInfos.Product.RequestedPriceDifferenceWithPercentage;
+                    }
+
+                    visit.CalculatedPriceDifferenceAsPercentage = calculatedDifferenceWithPercentage;
+                    visit.CalculatedPriceDifferenceAsAmount = calculatedDifferenceWithAmount;
+                    visit.RequestedPriceDifferenceAsPercentage = eachHtmlInfos!.Product!.RequestedPriceDifferenceWithPercentage;
+                    visit.RequestedPriceDifferenceAsAmount = eachHtmlInfos!.Product!.RequestedPriceDifferenceWithAmount;
+                    visit.NeedToNotify = needToNotify;                   
+                }
+                visits.Add(visit);
+            }
+            await DbContext.ScraperVisits.AddRangeAsync(visits);
+            await DbContext.SaveChangesAsync();
+            visits.Clear();
+        }
+
+        stopwatch.Stop();
+        Console.WriteLine("Elapsed.............");
+        Console.WriteLine(stopwatch.Elapsed);
+    }
+
+    public async Task CrawlAllProductsV3()
+    {
+        Stopwatch stopwatch = new Stopwatch();
+        stopwatch.Start();
+        ServerResponse<Product> activeProductsResponse = await GetActiveProducts();
+        if (activeProductsResponse == null || activeProductsResponse.Data == null || activeProductsResponse.Data.Count() == 0)
+        {
+            return;
+        }
+
+        int batchSize = 50;
+        int numberOfBatches = (int)Math.Ceiling((double)activeProductsResponse.TotalRowCount / batchSize);
+        CrawlingBusiness crawlingBusiness = new CrawlingBusiness(DbContext);
+
+        for (int i = 0; i < numberOfBatches; i++)
+        {
+            List<Product> productsPerTask = activeProductsResponse.Data.Skip(i * batchSize).Take(batchSize).ToList();
+            if (productsPerTask is null)
+            {
+                continue;
+            }
+
+            IEnumerable<Task<ScraperVisit>> tasksForEachProduct = productsPerTask.Select(eachProduct => crawlingBusiness.CrawlProduct(eachProduct));            
+            ScraperVisit[] visits = await Task.WhenAll(tasksForEachProduct);
+            await DbContext.ScraperVisits.AddRangeAsync(visits);
+            await DbContext.SaveChangesAsync();
+        }
+
+        stopwatch.Stop();
+        var a = stopwatch.Elapsed;
+    }
+
     public async Task<HtmlInfos> CrawlProduct(Product product)
     {
         HtmlInfos htmls = new();
-        htmls.TrendyolHtmlInfo = await HtmlInfo.GetHtml(product.TrendyolUrl, Websites.Trendyol);
-        htmls.AmazonHtmlInfo = await HtmlInfo.GetHtml(product.AmazonUrl, Websites.Amazon);
+        htmls.TrendyolHtmlInfo = await HtmlInfo.GetHtmlInfo(product.TrendyolUrl, Websites.Trendyol);
+        htmls.AmazonHtmlInfo = await HtmlInfo.GetHtmlInfo(product.AmazonUrl, Websites.Amazon);
         htmls.Product = product;
         return htmls;
     }
@@ -403,11 +528,11 @@ public class WebScraperBusiness
                            }).ToListAsync();
         
         string rowTemplateFileName = "PriceItemTemplate.txt";
-        string rowFilepath = Path.Combine(Environment.CurrentDirectory, @"Assets\EmalTemplates\", rowTemplateFileName);
+        string rowFilepath = Path.Combine(Environment.CurrentDirectory, @"Assets\EmailTemplates\", rowTemplateFileName);
         string rowFileContent = System.IO.File.ReadAllText(rowFilepath, System.Text.Encoding.UTF8);
 
         string htlmTemplateFileName = "PriceAlertTemplate.txt";
-        string hmtlFilepath = Path.Combine(Environment.CurrentDirectory, @"Assets\EmalTemplates\", htlmTemplateFileName);
+        string hmtlFilepath = Path.Combine(Environment.CurrentDirectory, @"Assets\EmailTemplates\", htlmTemplateFileName);
         string htmlFileContent = System.IO.File.ReadAllText(hmtlFilepath, System.Text.Encoding.UTF8);
 
         StringBuilder rowTemplateBuilder = new StringBuilder();

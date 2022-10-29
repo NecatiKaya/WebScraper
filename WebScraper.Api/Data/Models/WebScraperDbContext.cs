@@ -10,6 +10,8 @@ namespace WebScraper.Api.Data.Models
 
         public DbSet<ScraperVisit> ScraperVisits { get; set; }
 
+        public DbSet<HttpError> HttpErrorLogs { get; set; }
+
         public WebScraperDbContext(DbContextOptions options) : base(options) { }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)

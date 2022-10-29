@@ -27,6 +27,7 @@ public class CrawlJob : IJob
 
         WebScraperBusiness business = new WebScraperBusiness(_dbContext, _mailSender);
         await business.CrawlAllProducts();
+        //await business.CrawlAllProductsV2();
 
         DateTime finish = DateTime.Now;
         _logger.Log(LogLevel.Information, $" CrawlJob {finish.ToString()} is finished.");

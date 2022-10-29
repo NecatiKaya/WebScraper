@@ -17,4 +17,21 @@ public abstract class TrendyolPriceHandlerBase
     }
 
     public abstract ProductPriceInformation? HandleRequst(HtmlDocument doc);
+
+    protected decimal? ParseTrendyolPriceSpan(string? span)
+    {
+        if (span is null)
+        {
+            return null;
+        }
+
+        string onlyPriceText = span.Replace(" ", "").ToLower().Replace("tl", "").Trim(',', '.', '"');
+
+        if (decimal.TryParse(onlyPriceText, out decimal price))
+        {
+            return price;
+        }
+
+        return null;
+    }
 }

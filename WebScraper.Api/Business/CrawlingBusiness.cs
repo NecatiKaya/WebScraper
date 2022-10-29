@@ -1,94 +1,84 @@
-﻿using System.Diagnostics;
+﻿using System.ComponentModel;
+using System.Diagnostics;
 using WebScraper.Api.Business.Parsers;
 using WebScraper.Api.Data.Models;
 using WebScraper.Api.Dto;
+using WebScraper.Api.HttpClients;
+using WebScraper.Api.Utilities;
 
 namespace WebScraper.Api.Business;
 
 public class CrawlingBusiness
 {
+    public readonly WebScraperDbContext DbContext;
+
+    public CrawlingBusiness(WebScraperDbContext dbContext)
+    {
+        DbContext = dbContext;
+    }
+
+    public async Task<ScraperVisit> CrawlProduct(Product product)
+    {
+        //string? trendyolHtml = await VisitUrl(product.TrendyolUrl);
+        //string? amazonHtml = await VisitUrl(product.AmazonUrl);
+
+        FlirlHttpClient client = new FlirlHttpClient(DbContext);
+        string? trendyolHtml = await client.DownloadPageAsStringAsAsync(product.TrendyolUrl, product.Id);
+        string? amazonHtml = await client.DownloadPageAsStringAsAsync(product.AmazonUrl, product.Id);
+
+        //if (amazonHtml?.ToLower().Contains("sadece robot olma") == true)
+        //{
+            
+        //}
+
+        ProductPriceInformation? trendyolPriceInformation = GetPriceFromHtml(trendyolHtml, Websites.Trendyol);
+        ProductPriceInformation? amazonPriceInformation = GetPriceFromHtml(amazonHtml, Websites.Amazon);
+
+        ScraperVisit visit = MappingHelper.GetScraperVisit(product, trendyolPriceInformation, amazonPriceInformation);
+        return visit;
+    }
+
     public async Task<List<ScraperVisit>> CrawlProducts(List<Product> products)
     {
-        Stopwatch stopwatch = Stopwatch.StartNew();
-        stopwatch.Start();
-
-        List<Task<HtmlInfos>> tasks = new List<Task<HtmlInfos>>();
-        IEnumerable<Task<HtmlInfos>> crawlTasks = products.Select(_product => CrawlProduct(_product));
-        tasks.AddRange(crawlTasks);
-
-        IEnumerable<HtmlInfos> allHtmls = (await Task.WhenAll(tasks));
         List<ScraperVisit> visits = new List<ScraperVisit>(products.Count);
-        foreach (HtmlInfos eachHtmlInfos in allHtmls)
+        foreach (Product eachProduct in products)
         {
-            IHtmlParser trendyolParser = new TrendyolParser(eachHtmlInfos.TrendyolHtmlInfo?.Html!);
-            IHtmlParser amazonParser = new AmazonParser(eachHtmlInfos.AmazonHtmlInfo?.Html!);
+            string? trendyolHtml = await VisitUrl(eachProduct.TrendyolUrl);
+            string? amazonHtml = await VisitUrl(eachProduct.AmazonUrl);
 
-            ProductPriceInformation? trendyolPriceInformation = trendyolParser.Parse();
-            ProductPriceInformation? amazonPriceInformation = amazonParser.Parse();
+            ProductPriceInformation? trendyolPriceInformation = GetPriceFromHtml(trendyolHtml, Websites.Trendyol);
+            ProductPriceInformation? amazonPriceInformation = GetPriceFromHtml(amazonHtml, Websites.Amazon);
 
-            ScraperVisit visit = new ScraperVisit()
-            {
-                ProductId = eachHtmlInfos!.Product!.Id!,
-                VisitDate = DateTime.Now,
-                Notified = false
-            };
-            if (trendyolPriceInformation is not null)
-            {
-                visit.TrendyolCurrentDiscountAsAmount = trendyolPriceInformation.CurrentDiscountAsAmount;
-                visit.TrendyolCurrentDiscountAsPercentage = trendyolPriceInformation.CurrentDiscountAsPercentage;
-                visit.TrendyolCurrentPrice = trendyolPriceInformation.CurrentPrice;
-                visit.TrendyolPreviousPrice = trendyolPriceInformation.PreviousPrice;
-            }
-
-            if (amazonPriceInformation is not null)
-            {
-                visit.AmazonCurrentDiscountAsAmount = amazonPriceInformation.CurrentDiscountAsAmount;
-                visit.AmazonCurrentDiscountAsPercentage = amazonPriceInformation.CurrentDiscountAsPercentage;
-                visit.AmazonCurrentPrice = amazonPriceInformation.CurrentPrice;
-                visit.AmazonPreviousPrice = amazonPriceInformation.PreviousPrice;
-            }
-
-            if (trendyolPriceInformation is not null && amazonPriceInformation is not null)
-            {
-                decimal calculatedDifferenceWithPercentage = 0;
-                decimal calculatedDifferenceWithAmount = 0;
-                bool needToNotify = false;
-
-                calculatedDifferenceWithAmount = trendyolPriceInformation.CurrentPrice - amazonPriceInformation.CurrentPrice;
-                calculatedDifferenceWithPercentage = calculatedDifferenceWithAmount * 100 / trendyolPriceInformation.CurrentPrice;
-
-                if (eachHtmlInfos.Product.RequestedPriceDifferenceWithAmount is not null)
-                {
-                    needToNotify = calculatedDifferenceWithAmount >= eachHtmlInfos.Product.RequestedPriceDifferenceWithAmount;
-                }
-
-                if (eachHtmlInfos.Product.RequestedPriceDifferenceWithPercentage is not null)
-                {
-                    needToNotify = calculatedDifferenceWithPercentage >= eachHtmlInfos.Product.RequestedPriceDifferenceWithPercentage;
-                }
-
-                visit.CalculatedPriceDifferenceAsPercentage = calculatedDifferenceWithPercentage;
-                visit.CalculatedPriceDifferenceAsAmount = calculatedDifferenceWithAmount;
-                visit.RequestedPriceDifferenceAsPercentage = eachHtmlInfos!.Product!.RequestedPriceDifferenceWithPercentage;
-                visit.RequestedPriceDifferenceAsAmount = eachHtmlInfos!.Product!.RequestedPriceDifferenceWithAmount;
-                visit.NeedToNotify = needToNotify;
-            }
-
+            ScraperVisit visit = MappingHelper.GetScraperVisit(eachProduct, trendyolPriceInformation, amazonPriceInformation);
             visits.Add(visit);
         }
 
-        stopwatch.Stop();
-        Console.WriteLine("Elapsed.............");
-        Console.WriteLine(stopwatch.Elapsed);
         return visits;
     }
 
-    public async Task<HtmlInfos> CrawlProduct(Product product)
+    private async Task<string?> VisitUrl(string url)
     {
-        HtmlInfos htmls = new();
-        htmls.TrendyolHtmlInfo = await HtmlInfo.GetHtml(product.TrendyolUrl, Websites.Trendyol);
-        htmls.AmazonHtmlInfo = await HtmlInfo.GetHtml(product.AmazonUrl, Websites.Amazon);
-        htmls.Product = product;
-        return htmls;
+        string? html = await HtmlInfo.GetHtml(url);
+        return html;
+    }
+
+    private ProductPriceInformation? GetPriceFromHtml(string? html, Websites site)
+    {
+        if (html == null)
+        {
+            return null;
+        }
+        IHtmlParser parser;
+        if (site == Websites.Amazon)
+        {
+            parser = new AmazonParser(html);
+        }
+        else
+        {
+            parser = new TrendyolParser(html);
+        }
+
+        ProductPriceInformation? productPriceInformation = parser.Parse();
+        return productPriceInformation;
     }
 }

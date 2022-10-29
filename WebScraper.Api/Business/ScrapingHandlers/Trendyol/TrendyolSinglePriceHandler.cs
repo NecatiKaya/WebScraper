@@ -10,19 +10,19 @@ public class TrendyolSinglePriceHandler : TrendyolPriceHandlerBase
         HtmlNode? onePriceContainer = doc.DocumentNode.SelectNodes("//div[@class='product-price-container']")?.FirstOrDefault();
         if (onePriceContainer != null && onePriceContainer.HasChildNodes)
         {
-            HtmlNode? wholePartNode = onePriceContainer.SelectNodes("//span[@class='prc-dsc']").FirstOrDefault();
-            if (wholePartNode != null)
+            //HtmlNode? singlePrice = onePriceContainer.SelectNodes("./span[@class='prc-dsc']")?.First();
+            HtmlNode? singlePrice = onePriceContainer.Descendants("span")?.Last();
+            if (singlePrice != null)
             {
-                string? wholePart = wholePartNode.InnerText?.Replace(" ", "").ToLower().Replace("tl", "").Trim(',', '.', '"');
-
-                if (decimal.TryParse(wholePart, out decimal price))
+                decimal? currentPrice = ParseTrendyolPriceSpan(singlePrice.InnerText);
+                if (currentPrice is not null)
                 {
                     ProductPriceInformation priceInformation = new ProductPriceInformation()
                     {
                         CurrentDiscountAsAmount = 0,
                         CurrentDiscountAsPercentage = 0,
-                        CurrentPrice = price,
-                        PreviousPrice = price
+                        CurrentPrice = currentPrice.Value,
+                        PreviousPrice = currentPrice.Value
                     };
 
                     return priceInformation;

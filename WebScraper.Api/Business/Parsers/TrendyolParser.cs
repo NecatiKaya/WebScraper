@@ -24,8 +24,12 @@ namespace WebScraper.Api.Business.Parsers
             htmlDoc.OptionCheckSyntax = false;
             htmlDoc.LoadHtml(Html);
 
-            TrendyolPriceHandlerBase noPriceHandler = new TrendyolSinglePriceHandler();            
-            ProductPriceInformation? priceInformation = noPriceHandler.HandleRequst(htmlDoc);
+            TrendyolPriceHandlerBase singleHandler = new TrendyolSinglePriceHandler();
+            TrendyolPriceHandlerBase multiPriceHandler = new TrendyolMultiPriceHandler();
+            TrendyolPriceHandlerBase noPriceHandler = new TrendyolNoPriceHandler();
+            singleHandler.SetNextHandler(multiPriceHandler);
+            multiPriceHandler.SetNextHandler(noPriceHandler);
+            ProductPriceInformation? priceInformation = singleHandler.HandleRequst(htmlDoc);
             return priceInformation;
         }
     }

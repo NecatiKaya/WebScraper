@@ -26,10 +26,10 @@ public class CrawlingBusiness
         string? trendyolHtml = await client.DownloadPageAsStringAsAsync(product.TrendyolUrl, product.Id);
         string? amazonHtml = await client.DownloadPageAsStringAsAsync(product.AmazonUrl, product.Id);
 
-        //if (amazonHtml?.ToLower().Contains("sadece robot olma") == true)
-        //{
-            
-        //}
+        if (amazonHtml?.ToLower().Contains("sadece robot olma") == true)
+        {
+
+        }
 
         ProductPriceInformation? trendyolPriceInformation = GetPriceFromHtml(trendyolHtml, Websites.Trendyol);
         ProductPriceInformation? amazonPriceInformation = GetPriceFromHtml(amazonHtml, Websites.Amazon);

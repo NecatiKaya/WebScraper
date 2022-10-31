@@ -557,7 +557,7 @@ public class WebScraperBusiness
         //itemsToSend.ForEach((visit) => visit.Notified = true);
         //await DbContext.SaveChangesAsync();
 
-        var message = new MailMessage(new string[] { "necatikaya86@hotmail.com", "fmuratkaya@hotmail.com" }, "Prices Are Changing - Good Luck", htmlFileContent);
+        var message = new MailMessage(new string[] { "necatikaya86@hotmail.com", "fmuratkaya61@gmail.com" }, "Prices Are Changing - Good Luck", htmlFileContent);
         await MailSender.SendEmail(message);
     }
 }

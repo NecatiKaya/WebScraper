@@ -13,11 +13,14 @@ public class PriceAlertJob : IJob
 
     private readonly IMailSender _mailSender;
 
-    public PriceAlertJob(ILogger<CrawlJob> logger, WebScraperDbContext dbContext, IMailSender mailSender)
+    private readonly    RepositoryBusiness _repositoryBusiness;
+
+    public PriceAlertJob(ILogger<CrawlJob> logger, WebScraperDbContext dbContext, IMailSender mailSender, RepositoryBusiness repositoryBusiness)
     {
         _logger = logger;
         _dbContext = dbContext;
         _mailSender = mailSender;
+        _repositoryBusiness = repositoryBusiness;
     }
 
     public async Task Execute(IJobExecutionContext context)
@@ -25,7 +28,7 @@ public class PriceAlertJob : IJob
         DateTime start = DateTime.Now;
         _logger.Log(LogLevel.Information, $" PriceAlertJob {start.ToString()} is started.");
 
-        WebScraperBusiness business = new WebScraperBusiness(_dbContext, _mailSender);
+        WebScraperBusiness business = new WebScraperBusiness(_dbContext, _mailSender, _repositoryBusiness);
         await business.SendPriceAlertEmail();
 
         DateTime finish = DateTime.Now;

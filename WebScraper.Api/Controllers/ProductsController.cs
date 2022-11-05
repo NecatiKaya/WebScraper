@@ -18,11 +18,14 @@ public class ProductsController : ControllerBase
 
     private readonly IMailSender _mailSender;
 
-    public ProductsController(ILogger<ProductsController> logger, WebScraperDbContext webScraperDbContext, IMailSender mailSender)
+    private readonly RepositoryBusiness _repositoryBusiness;
+
+    public ProductsController(ILogger<ProductsController> logger, WebScraperDbContext webScraperDbContext, IMailSender mailSender, RepositoryBusiness repositoryBusiness)
     {
         _logger = logger;
         _webScraperDbContext = webScraperDbContext;
         _mailSender = mailSender;
+        _repositoryBusiness = repositoryBusiness;
     }
 
     [HttpGet]
@@ -35,14 +38,14 @@ public class ProductsController : ControllerBase
             SortDirection = sortDirection,
             SortKey = sortKey,
         };
-        ServerResponse<Product> products = await new WebScraperBusiness(_webScraperDbContext, _mailSender).GetAllProducts(request);
+        ServerResponse<Product> products = await new WebScraperBusiness(_webScraperDbContext, _mailSender, _repositoryBusiness).GetAllProducts(request);
         return Ok(products);
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<ServerResponse<Product>>> GetById([FromRoute] int id)
     {
-        ServerResponse<Product> products = await new WebScraperBusiness(_webScraperDbContext, _mailSender).GetProductById(id);
+        ServerResponse<Product> products = await new WebScraperBusiness(_webScraperDbContext, _mailSender, _repositoryBusiness).GetProductById(id);
         return Ok(products);
     }
 
@@ -50,14 +53,14 @@ public class ProductsController : ControllerBase
     [HttpGet("like-search")]
     public async Task<ActionResult<ServerResponse<Product>>> GetByNameLike(string? name = "")
     {
-        ServerResponse<Product> products = await new WebScraperBusiness(_webScraperDbContext, _mailSender).GetProductLikeByName(name ?? String.Empty);
+        ServerResponse<Product> products = await new WebScraperBusiness(_webScraperDbContext, _mailSender, _repositoryBusiness).GetProductLikeByName(name ?? String.Empty);
         return Ok(products);
     }
 
     [HttpPost]
     public async Task<ActionResult<ServerResponse<Product>>> Add(ProductAddDto productToAdd)
     {
-        Product product = await new WebScraperBusiness(_webScraperDbContext, _mailSender).AddProduct(productToAdd);
+        Product product = await new WebScraperBusiness(_webScraperDbContext, _mailSender, _repositoryBusiness).AddProduct(productToAdd);
         ServerResponse<Product> response = new ServerResponse<Product>();
         response.Data = new List<Product>() { product };
         return Ok(response);
@@ -66,7 +69,7 @@ public class ProductsController : ControllerBase
     [HttpPatch]
     public async Task<ActionResult<ServerResponse<Product>>> Update(ProductUpdateDto productToUpdate)
     {
-        Product product = await new WebScraperBusiness(_webScraperDbContext, _mailSender).UpdateProduct(productToUpdate);
+        Product product = await new WebScraperBusiness(_webScraperDbContext, _mailSender, _repositoryBusiness).UpdateProduct(productToUpdate);
         ServerResponse<Product> response = new ServerResponse<Product>();
         response.Data = new List<Product>() { product };
         return Ok(response);
@@ -75,7 +78,7 @@ public class ProductsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<ActionResult<ServerResponse<Product>>> Delete([FromRoute] int id)
     {
-        Product product = await new WebScraperBusiness(_webScraperDbContext, _mailSender).DeleteProduct(id);
+        Product product = await new WebScraperBusiness(_webScraperDbContext, _mailSender, _repositoryBusiness).DeleteProduct(id);
         ServerResponse<Product> response = new ServerResponse<Product>();
         response.Data = new List<Product>() { product };
         return Ok(response);
@@ -96,7 +99,7 @@ public class ProductsController : ControllerBase
         {
             serverResponse.IsSuccess = true;
             IFormFile productFile = Request.Form.Files[0];
-            await new WebScraperBusiness(_webScraperDbContext, _mailSender).UploadProductFile(productFile);
+            await new WebScraperBusiness(_webScraperDbContext, _mailSender, _repositoryBusiness).UploadProductFile(productFile);
         }
         catch (Exception ex)
         {
@@ -105,12 +108,5 @@ public class ProductsController : ControllerBase
         }
 
         return Ok(serverResponse);
-    }
-
-    [HttpPost("crawl")]
-    public async Task<IActionResult> Crawl()
-    {
-        await new WebScraperBusiness(_webScraperDbContext, _mailSender).CrawlAllProductsV3();
-        return Ok();
     }
 }

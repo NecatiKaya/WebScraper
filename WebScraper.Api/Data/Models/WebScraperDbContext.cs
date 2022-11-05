@@ -14,15 +14,23 @@ namespace WebScraper.Api.Data.Models
 
         public WebScraperDbContext(DbContextOptions options) : base(options) { }
 
+        public WebScraperDbContext()
+        {
+
+        }
+
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
-            var configuration = new ConfigurationBuilder()
+            if (!options.IsConfigured)
+            {
+                var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json")
                 .Build();
 
-            var connectionString = configuration.GetConnectionString("default");
-            options.UseSqlServer(connectionString);
+                var connectionString = configuration.GetConnectionString("default");
+                options.UseSqlServer(connectionString);
+            }
         }
     }
 }

@@ -22,10 +22,13 @@ public class WebScraperBusiness
 
     private IMailSender MailSender { get; set; }
 
-    public WebScraperBusiness(WebScraperDbContext ctx, IMailSender mailSender)
+    private readonly RepositoryBusiness _repositoryBusiness;
+
+    public WebScraperBusiness(WebScraperDbContext ctx, IMailSender mailSender, RepositoryBusiness repositoryBusiness)
     {
         DbContext = ctx;
         MailSender = mailSender;
+        _repositoryBusiness = repositoryBusiness;
     }
 
     public async Task<ServerResponse<Product>> GetAllProducts(ServerPagingRequest request)
@@ -517,7 +520,6 @@ public class WebScraperBusiness
 
     public async Task SendPriceAlertEmail()
     {
-        //List<ScraperVisit> itemsToSend = await DbContext.ScraperVisits.Where(visit => visit.NeedToNotify && !visit.Notified).ToListAsync();
         var items = await (from visit in DbContext.ScraperVisits.AsNoTracking()
                            join product in DbContext.Products.AsNoTracking() on visit.ProductId equals product.Id
                            where visit.NeedToNotify && !visit.Notified
@@ -554,10 +556,11 @@ public class WebScraperBusiness
 
         string rowHtml = rowTemplateBuilder.ToString();
         htmlFileContent = htmlFileContent.Replace("##rowTemplate", rowHtml);
-        //itemsToSend.ForEach((visit) => visit.Notified = true);
-        //await DbContext.SaveChangesAsync();
-
+        
         var message = new MailMessage(new string[] { "necatikaya86@hotmail.com", "fmuratkaya61@gmail.com" }, "Prices Are Changing - Good Luck", htmlFileContent);
         await MailSender.SendEmail(message);
+
+        int[] visitIds = items.Select(i => i.visit.Id).ToArray();
+        await _repositoryBusiness.VisitsNotified(visitIds);
     }
 }

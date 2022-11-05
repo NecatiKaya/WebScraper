@@ -16,17 +16,20 @@ public class EmailController : ControllerBase
 
     private readonly IMailSender _mailSender;
 
-    public EmailController(ILogger<ProductsController> logger, WebScraperDbContext webScraperDbContext, IMailSender mailSender)
+    private readonly RepositoryBusiness repositoryBusiness;
+
+    public EmailController(ILogger<ProductsController> logger, WebScraperDbContext webScraperDbContext, IMailSender mailSender, RepositoryBusiness repositoryBusiness)
     {
         _logger = logger;
         _webScraperDbContext = webScraperDbContext;
         _mailSender = mailSender;
+        this.repositoryBusiness = repositoryBusiness;
     }
 
     [HttpPost("price-alert")]
     public async Task<IActionResult> SendPriceAlertEmail()
     {
-        await new WebScraperBusiness(_webScraperDbContext, _mailSender).SendPriceAlertEmail();
+        await new WebScraperBusiness(_webScraperDbContext, _mailSender, repositoryBusiness).SendPriceAlertEmail();
         return Ok();
     }
 }

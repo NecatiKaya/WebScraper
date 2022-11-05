@@ -17,17 +17,20 @@ public class VisitsController : ControllerBase
 
     private readonly IMailSender _mailSender;
 
-    public VisitsController(ILogger<ProductsController> logger, WebScraperDbContext webScraperDbContext, IMailSender mailSender)
+    private readonly RepositoryBusiness _repositoryBusiness;
+
+    public VisitsController(ILogger<ProductsController> logger, WebScraperDbContext webScraperDbContext, IMailSender mailSender, RepositoryBusiness repositoryBusiness)
     {
         _logger = logger;
         _webScraperDbContext = webScraperDbContext;
         _mailSender = mailSender;
+        _repositoryBusiness = repositoryBusiness;
     }
 
     [HttpPost()]
     public async Task<ActionResult<ServerResponse<GetScraperVisitDto>>> GetScraperVisits(ServerPagingRequest request)
     {
-        ServerResponse<GetScraperVisitDto> visitsResponse = await new WebScraperBusiness(_webScraperDbContext, _mailSender).GetVisits(request);
+        ServerResponse<GetScraperVisitDto> visitsResponse = await new WebScraperBusiness(_webScraperDbContext, _mailSender, _repositoryBusiness).GetVisits(request);
         return Ok(visitsResponse);
     }
 }

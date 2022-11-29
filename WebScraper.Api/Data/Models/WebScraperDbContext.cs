@@ -12,6 +12,11 @@ namespace WebScraper.Api.Data.Models
 
         public DbSet<HttpError> HttpErrorLogs { get; set; }
 
+        public DbSet<AppLog> AppLogs { get; set; }
+
+        public DbSet<UserAgentString> UserAgentStrings { get; set; }
+
+
         public WebScraperDbContext(DbContextOptions options) : base(options) { }
 
         public WebScraperDbContext()

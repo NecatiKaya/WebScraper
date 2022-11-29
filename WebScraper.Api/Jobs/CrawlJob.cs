@@ -1,7 +1,11 @@
-﻿using Quartz;
+﻿using Flurl.Http;
+using Quartz;
 using WebScraper.Api.Business;
 using WebScraper.Api.Business.Email;
 using WebScraper.Api.Data.Models;
+using WebScraper.Api.Extensions;
+using WebScraper.Api.HttpClients.PuppeteerClient;
+using WebScraper.Api.Utilities;
 
 namespace WebScraper.Api.Jobs;
 
@@ -25,14 +29,36 @@ public class CrawlJob : IJob
 
     public async Task Execute(IJobExecutionContext context)
     {
+
+        //PuppeteerSharpClient puppeteerSharpClient = new PuppeteerSharpClient();
+        //puppeteerSharpClient.Get();
+
+        //return;
+
         DateTime start = DateTime.Now;
         _logger.Log(LogLevel.Information, $" CrawlJob {start.ToString()} is started.");
 
-        WebScraperBusiness business = new WebScraperBusiness(_dbContext, _mailSender, _repositoryBusiness);
-        await business.CrawlAllProductsV3();
-        //await business.CrawlAllProductsV2();
+        Guid jobId = Guid.NewGuid();
+        await LogHelper.SaveInformationLog(null, $" CrawlJob {start.ToString()} is started.", jobId.ToString());
+        try
+        {
+            WebScraperBusiness business = new WebScraperBusiness(_dbContext, _mailSender, _repositoryBusiness);
+            await business.CrawlAllProductsV3();
+            await business.SendPriceAlertEmail();
+        }
+        catch (Exception ex)
+        {
+            if (ex is FlurlHttpException)
+            {
+                (ex as FlurlHttpException)?.Call.LogErrorCallAsync();
+            }
+            await LogHelper.SaveErrorLog(ex, null, null, "Job Ex", null, null, -2000);
+            _logger.Log(LogLevel.Information, $" CrawlJob error occured. Stack Trace: {ex.StackTrace}. Message: {ex.Message}" );
+        }        
 
         DateTime finish = DateTime.Now;
         _logger.Log(LogLevel.Information, $" CrawlJob {finish.ToString()} is finished.");
+
+        await LogHelper.SaveInformationLog(null, $" CrawlJob {finish.ToString()} is finished.", jobId.ToString());
     }
 }

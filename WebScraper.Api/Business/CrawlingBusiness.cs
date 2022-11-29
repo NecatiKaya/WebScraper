@@ -1,6 +1,4 @@
-﻿using System.ComponentModel;
-using System.Diagnostics;
-using WebScraper.Api.Business.Parsers;
+﻿using WebScraper.Api.Business.Parsers;
 using WebScraper.Api.Data.Models;
 using WebScraper.Api.Dto;
 using WebScraper.Api.HttpClients;
@@ -17,19 +15,14 @@ public class CrawlingBusiness
         DbContext = dbContext;
     }
 
-    public async Task<ScraperVisit> CrawlProduct(Product product)
+    public async Task<ScraperVisit> CrawlProduct(Product product, UserAgentString ua)
     {
         //string? trendyolHtml = await VisitUrl(product.TrendyolUrl);
         //string? amazonHtml = await VisitUrl(product.AmazonUrl);
 
-        FlirlHttpClient client = new FlirlHttpClient(DbContext);
-        string? trendyolHtml = await client.DownloadPageAsStringAsAsync(product.TrendyolUrl, product.Id);
-        string? amazonHtml = await client.DownloadPageAsStringAsAsync(product.AmazonUrl, product.Id);
-
-        if (amazonHtml?.ToLower().Contains("sadece robot olma") == true)
-        {
-
-        }
+        FlurlHttpClient client = new FlurlHttpClient(DbContext);
+        string? trendyolHtml = await client.DownloadPageAsStringAsAsync(product.TrendyolUrl, product.Id, ua);
+        string? amazonHtml = await client.DownloadPageAsStringAsAsync(product.AmazonUrl, product.Id, ua);
 
         ProductPriceInformation? trendyolPriceInformation = GetPriceFromHtml(trendyolHtml, Websites.Trendyol);
         ProductPriceInformation? amazonPriceInformation = GetPriceFromHtml(amazonHtml, Websites.Amazon);

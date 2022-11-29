@@ -1,9 +1,8 @@
 ﻿using WebScraper.Api.Dto;
 
-namespace WebScraper.Api.Business.Parsers
+namespace WebScraper.Api.Business.Parsers;
+
+internal interface IHtmlParser
 {
-    internal interface IHtmlParser
-    {
-        ProductPriceInformation? Parse();
-    }
+    ProductPriceInformation? Parse();
 }

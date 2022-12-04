@@ -29,12 +29,6 @@ public class CrawlJob : IJob
 
     public async Task Execute(IJobExecutionContext context)
     {
-
-        //PuppeteerSharpClient puppeteerSharpClient = new PuppeteerSharpClient();
-        //puppeteerSharpClient.Get();
-
-        //return;
-
         DateTime start = DateTime.Now;
         _logger.Log(LogLevel.Information, $" CrawlJob {start.ToString()} is started.");
 

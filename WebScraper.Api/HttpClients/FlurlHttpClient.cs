@@ -2,7 +2,10 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading;
+using WebScraper.Api.Business;
 using WebScraper.Api.Data.Models;
+using WebScraper.Api.Exceptions;
+using WebScraper.Api.HttpClients.PuppeteerClient;
 using WebScraper.Api.Utilities;
 
 namespace WebScraper.Api.HttpClients;
@@ -16,7 +19,7 @@ public class FlurlHttpClient
         DbContext = dbContext;
     }
 
-    public async Task<string?> DownloadPageAsStringAsAsync(string? url, int? productId = null, UserAgentString? ua = null, CancellationToken cancellationToken = default(CancellationToken))
+    public async Task<string?> DownloadPageAsStringAsAsync(string? url, int? productId = null, UserAgentString? ua = null, CancellationToken cancellationToken = default(CancellationToken), int? retryCount = 0)
     {
         if (url is null)
         {
@@ -25,6 +28,8 @@ public class FlurlHttpClient
 
         try
         {
+            RepositoryBusiness repositoryBusiness = new RepositoryBusiness(new WebScraperDbContext());
+
             IFlurlResponse response = null;
             if (ua is null)
             {
@@ -32,9 +37,18 @@ public class FlurlHttpClient
             }
             else
             {
-                response = await url
-                    //.WithHeader("accept-language", "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7")
-                    //.WithHeader("user-agent", ua.Agent)
+                CookieStore cookieStore = await repositoryBusiness.GetNotUsedCookie(Websites.Amazon);
+                response = await url                   
+                    .WithHeader("cookie", cookieStore.CookieValue)
+                    .WithHeader("user-agent", ua.Agent)
+                    .WithHeader("accept-language", "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7")
+                    .WithHeader("User-Agent", ua.Agent)
+                    .WithHeader("Accept-Language", "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7")
+                    .WithHeader("pragma", "no-cache")
+                    .WithHeader("sec-ch-ua-platform", "Windows")
+                    .WithHeader("upgrade-insecure-requests", "1")
+                    .WithHeader("ect", "4g")
+                    .WithHeader("cache-control", "no-cache")
                     .GetAsync(cancellationToken, HttpCompletionOption.ResponseContentRead);
             }
             
@@ -56,6 +70,17 @@ public class FlurlHttpClient
                     error.HeadersAsString = GetResponseHeadersAsString(response.ResponseMessage?.Headers);
                     ctx.HttpErrorLogs.Add(error);
                     await ctx.SaveChangesAsync();
+                }                
+               
+                UserAgentString newUa = await repositoryBusiness.GetRandomUserAgent();
+                if (retryCount <= 3)
+                {
+                    retryCount++;
+                    return await DownloadPageAsStringAsAsync(url, productId, newUa, cancellationToken, retryCount);
+                }
+                else
+                {
+                    await LogHelper.SaveLog(LogLevel.Error, productId, url, "Retry 10 times but no response", html, GetResponseHeadersAsString(response.ResponseMessage?.Headers), 1001);
                 }
             }
 
@@ -92,20 +117,6 @@ public class FlurlHttpClient
 
         return null;
     }
-
-    //private async Task<HttpError> GetHttpError(FlurlHttpException httpEx, int? productId = null, bool isTimeoutEx = false)
-    //{
-    //    HttpError error = new HttpError(); 
-    //    error.Duration = httpEx?.Call.Duration ?? (httpEx?.Call.StartedUtc - DateTime.Now.ToUniversalTime());
-    //    error.ErrorUrl = httpEx?.Call?.Request?.Url;
-    //    error.IsTimeoutEx = isTimeoutEx;
-    //    error.ProductId = productId;
-    //    error.ResponseHtml = httpEx != null ? await httpEx.GetResponseStringAsync() : null;
-    //    error.StatusCode = httpEx?.StatusCode;
-    //    error.ErrorDate = DateTime.Now;
-    //    error.HeadersAsString = GetResponseHeadersAsString(httpEx?.Call?.HttpResponseMessage?.Headers);
-    //    return error;
-    //}
 
     private string? GetResponseHeadersAsString(HttpResponseHeaders? headers)
     {

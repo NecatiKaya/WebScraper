@@ -461,8 +461,7 @@ public class WebScraperBusiness
                 continue;
             }
 
-            UserAgentString ua = await _repositoryBusiness.GetRandomUserAgent();
-            IEnumerable<Task<ScraperVisit>> tasksForEachProduct = productsPerTask.Select(eachProduct => crawlingBusiness.CrawlProduct(eachProduct, ua));            
+            IEnumerable<Task<ScraperVisit>> tasksForEachProduct = productsPerTask.Select(eachProduct => crawlingBusiness.CrawlProduct(eachProduct));
             ScraperVisit[] visits = await Task.WhenAll(tasksForEachProduct);
             await DbContext.ScraperVisits.AddRangeAsync(visits);
             await DbContext.SaveChangesAsync();

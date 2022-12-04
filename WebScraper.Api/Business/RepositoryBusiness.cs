@@ -43,4 +43,23 @@ public class RepositoryBusiness
             .OrderBy((x) => Guid.NewGuid()).FirstOrDefaultAsync();
         return ua!;
     }
+
+    public async Task<CookieStore> SaveCookie(CookieStore cookie)
+    {
+        DbContext.CookieStores.Add(cookie);
+        await DbContext.SaveChangesAsync();
+        return cookie;
+    }
+
+    public async Task<CookieStore> GetNotUsedCookie(Websites website)
+    {
+        CookieStore? _cookie = await DbContext.CookieStores.Where(cookie => !cookie.IsUsed && cookie.WebSite == website).FirstOrDefaultAsync();
+        if (_cookie != null)
+        {
+            _cookie.IsUsed = true;
+            await DbContext.SaveChangesAsync();
+        }
+        
+        return _cookie;
+    }
 }

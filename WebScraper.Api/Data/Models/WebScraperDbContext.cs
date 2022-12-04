@@ -16,6 +16,7 @@ namespace WebScraper.Api.Data.Models
 
         public DbSet<UserAgentString> UserAgentStrings { get; set; }
 
+        public DbSet<CookieStore> CookieStores { get; set; }
 
         public WebScraperDbContext(DbContextOptions options) : base(options) { }
 

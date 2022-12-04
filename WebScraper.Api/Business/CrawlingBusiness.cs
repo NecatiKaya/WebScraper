@@ -15,14 +15,14 @@ public class CrawlingBusiness
         DbContext = dbContext;
     }
 
-    public async Task<ScraperVisit> CrawlProduct(Product product, UserAgentString ua)
+    public async Task<ScraperVisit> CrawlProduct(Product product)
     {
         //string? trendyolHtml = await VisitUrl(product.TrendyolUrl);
         //string? amazonHtml = await VisitUrl(product.AmazonUrl);
 
         FlurlHttpClient client = new FlurlHttpClient(DbContext);
-        string? trendyolHtml = await client.DownloadPageAsStringAsAsync(product.TrendyolUrl, product.Id, ua);
-        string? amazonHtml = await client.DownloadPageAsStringAsAsync(product.AmazonUrl, product.Id, ua);
+        string? trendyolHtml = await client.DownloadPageAsStringAsAsync(product.TrendyolUrl, product.Id);
+        string? amazonHtml = await client.DownloadPageAsStringAsAsync(product.AmazonUrl, product.Id);
 
         ProductPriceInformation? trendyolPriceInformation = GetPriceFromHtml(trendyolHtml, Websites.Trendyol);
         ProductPriceInformation? amazonPriceInformation = GetPriceFromHtml(amazonHtml, Websites.Amazon);

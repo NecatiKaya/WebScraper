@@ -51,9 +51,15 @@ public class RepositoryBusiness
         return cookie;
     }
 
-    public async Task<CookieStore> GetNotUsedCookie(Websites website)
+    public async Task SaveCookies(CookieStore[] cookies)
     {
-        CookieStore? _cookie = await DbContext.CookieStores.Where(cookie => !cookie.IsUsed && cookie.WebSite == website).FirstOrDefaultAsync();
+        await DbContext.CookieStores.AddRangeAsync(cookies);
+        await DbContext.SaveChangesAsync();
+    }
+
+    public async Task<CookieStore?> GetNotUsedCookie(Websites website)
+    {
+        CookieStore? _cookie = await DbContext.CookieStores.Where(cookie => !cookie.IsUsed && cookie.WebSite == website).OrderBy((x) => Guid.NewGuid()).FirstOrDefaultAsync();
         if (_cookie != null)
         {
             _cookie.IsUsed = true;

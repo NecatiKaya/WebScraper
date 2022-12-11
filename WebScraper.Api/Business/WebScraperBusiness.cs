@@ -461,7 +461,9 @@ public class WebScraperBusiness
                 continue;
             }
 
-            IEnumerable<Task<ScraperVisit>> tasksForEachProduct = productsPerTask.Select(eachProduct => crawlingBusiness.CrawlProduct(eachProduct));
+            CookieStore? cookie = await _repositoryBusiness.GetNotUsedCookie(Websites.Amazon);
+            UserAgentString userAgentString = await _repositoryBusiness.GetRandomUserAgent();
+            IEnumerable<Task<ScraperVisit>> tasksForEachProduct = productsPerTask.Select(eachProduct => crawlingBusiness.CrawlProduct(eachProduct, cookie, userAgentString));
             ScraperVisit[] visits = await Task.WhenAll(tasksForEachProduct);
             await DbContext.ScraperVisits.AddRangeAsync(visits);
             await DbContext.SaveChangesAsync();

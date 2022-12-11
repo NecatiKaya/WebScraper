@@ -17,7 +17,7 @@ public class PuppeteerSharpClient
         try
         {
             Stopwatch wa = Stopwatch.StartNew();
-          
+
             string? currentDirectory = Directory.GetCurrentDirectory();
             string downloadPath = Path.Combine(currentDirectory, "..", "..", "CustomChromium");
             Console.WriteLine($"Attemping to set up puppeteer to use Chromium found under directory {downloadPath} ");
@@ -41,7 +41,10 @@ public class PuppeteerSharpClient
 
             Console.WriteLine($"Attemping to start Chromium using executable path: {executablePath}");
 
-            LaunchOptions options = new LaunchOptions { Headless = true, ExecutablePath = executablePath, 
+            LaunchOptions options = new LaunchOptions
+            {
+                Headless = true,
+                ExecutablePath = executablePath,
                 Args = new[] {
                     "--proxy-server=http://premium.residential.proxyrack.net:9000",
                     "--disable-gl-drawing-for-tests",
@@ -102,21 +105,21 @@ public class PuppeteerSharpClient
                             var page = await browser.NewPageAsync();
                             await page.GoToAsync(url, new NavigationOptions()
                             {
-                                WaitUntil = new[] { WaitUntilNavigation.Load }
+                                WaitUntil = new[] { WaitUntilNavigation.DOMContentLoaded}
                             });
                             string bodyHTML = await page.GetContentAsync();
                             return bodyHTML;
                         })));
-                    
-                    
+
+
                     wa.Stop();
                     Console.WriteLine(wa.Elapsed.TotalSeconds);
 
                     //await page.GoToAsync("");
                     //string bodyHTML = await page.GetContentAsync();
-                   
 
-                   
+
+
                     ////Console.WriteLine(bodyHTML);
                     //wa.Reset();
 
@@ -136,7 +139,7 @@ public class PuppeteerSharpClient
         {
 
         }
-        
+
         return;
     }
 
@@ -160,7 +163,7 @@ public class PuppeteerSharpClient
             await browserFetcher.DownloadAsync(BrowserFetcher.DefaultChromiumRevision);
 
             ExecutablePath = browserFetcher.GetExecutablePath(BrowserFetcher.DefaultChromiumRevision);
-            
+
             if (string.IsNullOrEmpty(ExecutablePath))
             {
                 try
@@ -179,10 +182,11 @@ public class PuppeteerSharpClient
         }
     }
 
-    public async Task<string> GetNewCookie(string url)
+    public async Task<string[]> GetNewCookies(string url)
     {
         try
         {
+            List<string> cookies = new List<string>();
             if (ExecutablePath == null)
             {
                 throw new Exception("Executable Path is null");
@@ -235,25 +239,30 @@ public class PuppeteerSharpClient
             using (IBrowser browser = await Puppeteer.LaunchAsync(options))
             {
                 using (IPage page = await browser.NewPageAsync())
-                {                       
-                    await page.GoToAsync(url, new NavigationOptions()
+                {
+                    for (int i = 0; i < 50; i++)
                     {
-                        WaitUntil = new[] { WaitUntilNavigation.Load }
-                    });
-                    CookieParam[] cookieParams = await page.GetCookiesAsync(url);
-                    if (cookieParams != null)
-                    {
-                        return string.Join(';', cookieParams.Select(eachParam => $"{eachParam.Name}={eachParam.Value}"));
+                        await page.GoToAsync(url, new NavigationOptions()
+                        {
+                            WaitUntil = new[] { WaitUntilNavigation.DOMContentLoaded }
+                        });
+                        CookieParam[] cookieParams = await page.GetCookiesAsync(url);
+                        if (cookieParams != null)
+                        {
+                            string _cookie = string.Join(';', cookieParams.Select(eachParam => $"{eachParam.Name}={eachParam.Value}"));
+                            cookies.Add(_cookie);
+                        }
                     }
-
                 }
+                await browser.CloseAsync();
             }
+            return cookies.ToArray();
         }
         catch (Exception ex)
         {
 
         }
 
-        return null;
+        return new string[0];
     }
 }

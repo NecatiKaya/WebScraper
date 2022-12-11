@@ -1,4 +1,5 @@
 ﻿using Quartz;
+using System.Net;
 using WebScraper.Api.Business;
 using WebScraper.Api.Business.Email;
 using WebScraper.Api.Data.Models;
@@ -36,9 +37,14 @@ public class LoadCookiesJob : IJob
         {
             PuppeteerSharpClient puppeteerSharpClient = new PuppeteerSharpClient();
             await puppeteerSharpClient.Prepare();
-            string cookie = await puppeteerSharpClient.GetNewCookie("https://www.amazon.com.tr/");
-            _logger.Log(LogLevel.Information, $"LoadCookiesJob Cookie Loaded. Loaded Cooki : " + cookie);
-            await _repositoryBusiness.SaveCookie(new CookieStore() { CookieValue= cookie, CreateDate = DateTime.Now, IsUsed = false, WebSite = Websites.Amazon });
+            string[] cookies = await puppeteerSharpClient.GetNewCookies("https://www.amazon.com.tr/");
+            _logger.Log(LogLevel.Information, $"LoadCookiesJob Cookies are Loaded");
+            if (cookies?.Length > 0)
+            {
+                CookieStore[] store = cookies.Select(eachCookie => new CookieStore() { CookieValue = eachCookie, CreateDate = DateTime.Now, IsUsed = false, WebSite = Websites.Amazon }).ToArray();
+                await _repositoryBusiness.SaveCookies(store);
+            }
+            
             _logger.Log(LogLevel.Information, $"LoadCookiesJob Cookie Saved");
         }
         catch (Exception ex)

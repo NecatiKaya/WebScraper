@@ -108,7 +108,7 @@ builder.Services.AddQuartz(q =>
     //    .ForJob(crawlJobKey)
     //    .WithIdentity("CrawlJob-Trigger")
     //    .WithSimpleSchedule(x => x
-    //        .WithInterval(TimeSpan.FromMinutes(5))
+    //        .WithInterval(TimeSpan.FromMinutes(15))
     //        .RepeatForever()));
 
     JobKey cookieLoadJobJobKey = new JobKey("LoadCookiesJob");
@@ -117,7 +117,14 @@ builder.Services.AddQuartz(q =>
         .ForJob(cookieLoadJobJobKey)
         .WithIdentity("LoadCookiesJob-Trigger")
         .WithSimpleSchedule(x => x
-            .WithInterval(TimeSpan.FromSeconds(20))
+            .WithInterval(TimeSpan.FromMinutes(2))
+            .RepeatForever()));
+
+    q.AddTrigger(opts => opts
+        .ForJob(cookieLoadJobJobKey)
+        .WithIdentity("LoadCookiesJob-Trigger2")
+        .WithSimpleSchedule(x => x
+            .WithInterval(TimeSpan.FromMinutes(2))
             .RepeatForever()));
 });
 

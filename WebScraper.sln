@@ -5,6 +5,12 @@ VisualStudioVersion = 17.3.32901.215
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebScraper.Api", "WebScraper.Api\WebScraper.Api.csproj", "{09F551D8-B757-430B-88FE-032335F33271}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "V2", "V2", "{5D437493-2EA3-41A8-BCAC-76286F55AD42}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "V1", "V1", "{E4291C02-30CD-4285-BBDB-0157D75937EF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebScraper.Api.V2", "WebScraper.Api.V2\WebScraper.Api.V2.csproj", "{9DEBA836-4CAD-4C7F-AB38-2EBB60D2A0E5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,9 +21,17 @@ Global
 		{09F551D8-B757-430B-88FE-032335F33271}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{09F551D8-B757-430B-88FE-032335F33271}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{09F551D8-B757-430B-88FE-032335F33271}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9DEBA836-4CAD-4C7F-AB38-2EBB60D2A0E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9DEBA836-4CAD-4C7F-AB38-2EBB60D2A0E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9DEBA836-4CAD-4C7F-AB38-2EBB60D2A0E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9DEBA836-4CAD-4C7F-AB38-2EBB60D2A0E5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{09F551D8-B757-430B-88FE-032335F33271} = {E4291C02-30CD-4285-BBDB-0157D75937EF}
+		{9DEBA836-4CAD-4C7F-AB38-2EBB60D2A0E5} = {5D437493-2EA3-41A8-BCAC-76286F55AD42}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {03DD63E1-0843-4C78-A502-19B844F3EE28}

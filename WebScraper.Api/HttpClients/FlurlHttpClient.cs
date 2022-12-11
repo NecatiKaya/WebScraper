@@ -1,4 +1,5 @@
-﻿using Flurl.Http;
+﻿using Flurl;
+using Flurl.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading;
@@ -19,7 +20,7 @@ public class FlurlHttpClient
         DbContext = dbContext;
     }
 
-    public async Task<string?> DownloadPageAsStringAsAsync(string? url, int? productId = null, UserAgentString? ua = null, CancellationToken cancellationToken = default(CancellationToken), int? retryCount = 0)
+    public async Task<string?> DownloadPageAsStringAsAsync(string? url, int? productId = null, UserAgentString? ua = null, CookieStore? cookieStore = null, CancellationToken cancellationToken = default(CancellationToken), int? retryCount = 0)
     {
         if (url is null)
         {
@@ -29,29 +30,30 @@ public class FlurlHttpClient
         try
         {
             RepositoryBusiness repositoryBusiness = new RepositoryBusiness(new WebScraperDbContext());
-
-            IFlurlResponse response = null;
-            if (ua is null)
+            IFlurlRequest req = new FlurlRequest(url);
+            if (ua is not null)
             {
-                response = await url.GetAsync(cancellationToken, HttpCompletionOption.ResponseContentRead);
+                req = url.WithHeader("user-agent", ua.Agent)
+                    .WithHeader("User-Agent", ua.Agent);
             }
-            else
+
+            if (cookieStore is not null)
             {
-                CookieStore cookieStore = await repositoryBusiness.GetNotUsedCookie(Websites.Amazon);
-                response = await url                   
-                    .WithHeader("cookie", cookieStore.CookieValue)
-                    .WithHeader("user-agent", ua.Agent)
+                req = url.WithHeader("cookie", cookieStore.CookieValue);
+            }
+
+            if (url.Contains("amazon.com.tr"))
+            {
+                req = url
                     .WithHeader("accept-language", "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7")
-                    .WithHeader("User-Agent", ua.Agent)
                     .WithHeader("Accept-Language", "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7")
                     .WithHeader("pragma", "no-cache")
                     .WithHeader("sec-ch-ua-platform", "Windows")
                     .WithHeader("upgrade-insecure-requests", "1")
                     .WithHeader("ect", "4g")
-                    .WithHeader("cache-control", "no-cache")
-                    .GetAsync(cancellationToken, HttpCompletionOption.ResponseContentRead);
+                    .WithHeader("cache-control", "no-cache");
             }
-            
+            IFlurlResponse response = await req.GetAsync(cancellationToken, HttpCompletionOption.ResponseContentRead);
             response.ResponseMessage.EnsureSuccessStatusCode();
             string html = await response.GetStringAsync();
 
@@ -73,10 +75,11 @@ public class FlurlHttpClient
                 }                
                
                 UserAgentString newUa = await repositoryBusiness.GetRandomUserAgent();
+                CookieStore? store = await repositoryBusiness.GetNotUsedCookie(Websites.Amazon);
                 if (retryCount <= 3)
                 {
                     retryCount++;
-                    return await DownloadPageAsStringAsAsync(url, productId, newUa, cancellationToken, retryCount);
+                    return await DownloadPageAsStringAsAsync(url, productId, newUa, store, cancellationToken, retryCount);
                 }
                 else
                 {

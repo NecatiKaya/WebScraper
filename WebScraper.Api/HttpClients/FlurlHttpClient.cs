@@ -33,25 +33,26 @@ public class FlurlHttpClient
             IFlurlRequest req = new FlurlRequest(url);
             if (ua is not null)
             {
-                req = url.WithHeader("user-agent", ua.Agent)
+                req = req.WithHeader("user-agent", ua.Agent)
                     .WithHeader("User-Agent", ua.Agent);
             }
 
             if (cookieStore is not null)
             {
-                req = url.WithHeader("cookie", cookieStore.CookieValue);
+                req = req.WithHeader("cookie", cookieStore.CookieValue);
             }
 
             if (url.Contains("amazon.com.tr"))
             {
-                req = url
+                req = req
                     .WithHeader("accept-language", "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7")
                     .WithHeader("Accept-Language", "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7")
                     .WithHeader("pragma", "no-cache")
                     .WithHeader("sec-ch-ua-platform", "Windows")
                     .WithHeader("upgrade-insecure-requests", "1")
                     .WithHeader("ect", "4g")
-                    .WithHeader("cache-control", "no-cache");
+                    .WithHeader("cache-control", "no-cache")
+                    .WithHeader("referer", "https://www.amazon.com.tr");
             }
             IFlurlResponse response = await req.GetAsync(cancellationToken, HttpCompletionOption.ResponseContentRead);
             response.ResponseMessage.EnsureSuccessStatusCode();
@@ -83,7 +84,7 @@ public class FlurlHttpClient
                 }
                 else
                 {
-                    await LogHelper.SaveLog(LogLevel.Error, productId, url, "Retry 10 times but no response", html, GetResponseHeadersAsString(response.ResponseMessage?.Headers), 1001);
+                    await LogHelper.SaveLog(LogLevel.Error, productId, url, "Retry 3 times but no response", html, GetResponseHeadersAsString(response.ResponseMessage?.Headers), 1001);
                 }
             }
 

@@ -2,6 +2,6 @@
 
 public enum PriceNotFoundReasons
 {
-    PriceDoesNotOnThePage = 1,
+    PriceIsNotOnThePage = 1,
     ExceptionOccured = 2
 }

@@ -497,7 +497,7 @@ public class WebScraperBusiness
 
         using (StreamReader reader = new StreamReader(file.OpenReadStream()))
         {    
-            using (var csv = new CsvReader(reader, config))
+            using (CsvReader csv = new CsvReader(reader, config))
             {
                 List<ProductFileDefinition> records = csv.GetRecords<ProductFileDefinition>().ToList();
                 List<ProductFileDefinition> validRecords = records.Where(eactRecord => eactRecord.IsValid()).ToList();

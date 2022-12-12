@@ -13,14 +13,11 @@ public class CrawlJob : IJob
 
     private readonly IMailSender _mailSender;
 
-    private readonly RepositoryBusiness _repositoryBusiness;
-
-    public CrawlJob(ILogger<CrawlJob> logger, WebScraperDbContext dbContext, IMailSender mailSender, RepositoryBusiness repositoryBusiness)
+    public CrawlJob(ILogger<CrawlJob> logger, WebScraperDbContext dbContext, IMailSender mailSender)
     {
         _logger = logger;
         _dbContext = dbContext;
         _mailSender = mailSender;
-        _repositoryBusiness = repositoryBusiness;
     }
 
     public async Task Execute(IJobExecutionContext context)
@@ -29,7 +26,7 @@ public class CrawlJob : IJob
         _logger.Log(LogLevel.Information, $" CrawlJob {start.ToString()} is started.");
 
         Guid jobId = Guid.NewGuid();
-        await LogHelper.SaveInformationLog(null, $" CrawlJob {start.ToString()} is started.", jobId.ToString());
+        //await LogHelper.SaveInformationLog(null, $" CrawlJob {start.ToString()} is started.", jobId.ToString());
         try
         {
             WebScraperBusiness business = new WebScraperBusiness(_dbContext, _mailSender, _repositoryBusiness);
@@ -42,13 +39,13 @@ public class CrawlJob : IJob
             {
                 (ex as FlurlHttpException)?.Call.LogErrorCallAsync();
             }
-            await LogHelper.SaveErrorLog(ex, null, null, "Job Ex", null, null, -2000);
+            //await LogHelper.SaveErrorLog(ex, null, null, "Job Ex", null, null, -2000);
             _logger.Log(LogLevel.Information, $" CrawlJob error occured. Stack Trace: {ex.StackTrace}. Message: {ex.Message}");
         }
 
         DateTime finish = DateTime.Now;
         _logger.Log(LogLevel.Information, $" CrawlJob {finish.ToString()} is finished.");
 
-        await LogHelper.SaveInformationLog(null, $" CrawlJob {finish.ToString()} is finished.", jobId.ToString());
+        //await LogHelper.SaveInformationLog(null, $" CrawlJob {finish.ToString()} is finished.", jobId.ToString());
     }
 }

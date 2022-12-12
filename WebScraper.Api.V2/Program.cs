@@ -6,8 +6,11 @@ using WebScraper.Api.V2.Business.Email;
 using WebScraper.Api.V2.Data.Models;
 
 var builder = WebApplication.CreateBuilder(args);
-string connectionString = builder.Configuration.GetConnectionString("default");
-// Add services to the container.
+string? connectionString = builder.Configuration.GetConnectionString("default");
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new ArgumentNullException(nameof(connectionString));
+}
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -31,8 +34,6 @@ if (emailConfig is not null)
     builder.Services.AddSingleton(emailConfig);
 }
 builder.Services.AddScoped<IMailSender, MailSender>();
-builder.Services.AddScoped<RepositoryBusiness, RepositoryBusiness>();
-
 
 FlurlHttp.ConfigureClient("https://www.amazon.com.tr", (settings) =>
 {

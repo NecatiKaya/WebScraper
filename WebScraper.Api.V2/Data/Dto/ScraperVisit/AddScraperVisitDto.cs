@@ -27,6 +27,10 @@ public class AddScraperVisitDto
 
     public int? LogId { get; set; }
 
+    public string? UsedCookieValue { get; set; }
+
+    public string? UsedUserAgentValue { get; set; }
+
     public PriceNotFoundReasons? PriceNotFoundReason { get; set; }
 
     public Data.Models.ScraperVisit ToScraperVisit()
@@ -51,6 +55,8 @@ public class AddScraperVisitDto
             VisitDate = VisitDate,
             PriceNotFoundReason = PriceNotFoundReason,
             LogId = LogId,
+            UsedCookieValue = UsedCookieValue,
+            UsedUserAgentValue = UsedUserAgentValue
         };
         return visit;
     }

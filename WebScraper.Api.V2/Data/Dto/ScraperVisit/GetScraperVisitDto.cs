@@ -42,5 +42,8 @@ public class GetScraperVisitDto
 
     public int? LogId { get; set; }
 
-    public PriceNotFoundReasons? PriceNotFoundReason { get; set; }
+    public string? UsedCookieValue { get; set; }
+
+    public string? UsedUserAgentValue { get; set; }
+    public PriceNotFoundReasons? PriceNotFoundReason { get; set; }    
 }

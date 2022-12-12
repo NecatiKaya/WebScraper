@@ -38,5 +38,9 @@ public class ScraperVisit
 
     public int? LogId { get; set; }
 
+    public string? UsedCookieValue { get; set; }
+
+    public string? UsedUserAgentValue { get; set; }
+
     public PriceNotFoundReasons? PriceNotFoundReason { get; set; }
 }

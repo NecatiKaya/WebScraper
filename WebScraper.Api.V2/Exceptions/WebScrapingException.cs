@@ -31,4 +31,17 @@ public class WebScrapingException : Exception
         ProductId = productId;
         ScraperVisitId = visitId;
     }
+
+    public WebScrapingException(Exception innerException, Websites website, int statusCode, string url, int? productId = null, int? visitId = null, string? httpResponse = null, List<KeyValuePair<string, string>>? requestHeaders = null,
+        List<KeyValuePair<string, string>>? responseHeaders = null) : base($"From {website}: WebScrapingException occured for url ('{url}') with status code {statusCode}.", innerException)
+    {
+        Website = website;
+        StatusCode = statusCode;
+        Url = url;
+        HttpRequestHeaders = requestHeaders ?? new List<KeyValuePair<string, string>>();
+        HttpResponseHeaders = responseHeaders ?? new List<KeyValuePair<string, string>>();
+        HttpResponse = httpResponse;
+        ProductId = productId;
+        ScraperVisitId = visitId;
+    }
 }

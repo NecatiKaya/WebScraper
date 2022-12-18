@@ -14,7 +14,7 @@
                 return null;
             }
 
-            KeyValuePair<string, object>? param = parameterCollection.Where(param => param.Key == name).FirstOrDefault();
+            KeyValuePair<string, object>? param = parameterCollection.Where(param => param.Key == parameterName).FirstOrDefault();
             if (param != null)
             {
                 return param.Value.Value;

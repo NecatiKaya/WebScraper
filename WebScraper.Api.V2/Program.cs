@@ -4,6 +4,7 @@ using Quartz;
 using System.Net;
 using WebScraper.Api.V2.Business.Email;
 using WebScraper.Api.V2.Data.Models;
+using WebScraper.Api.V2.Jobs;
 
 var builder = WebApplication.CreateBuilder(args);
 string? connectionString = builder.Configuration.GetConnectionString("default");
@@ -101,15 +102,15 @@ builder.Services.AddQuartz(q =>
         .ForJob(cookieLoadJobJobKey)
         .WithIdentity("LoadCookiesJob-Trigger")
         .WithSimpleSchedule(x => x
-            .WithInterval(TimeSpan.FromMinutes(2))
+            .WithInterval(TimeSpan.FromMinutes(10))
             .RepeatForever()));
 
-    q.AddTrigger(opts => opts
-        .ForJob(cookieLoadJobJobKey)
-        .WithIdentity("LoadCookiesJob-Trigger2")
-        .WithSimpleSchedule(x => x
-            .WithInterval(TimeSpan.FromMinutes(2))
-            .RepeatForever()));
+    //q.AddTrigger(opts => opts
+    //    .ForJob(cookieLoadJobJobKey)
+    //    .WithIdentity("LoadCookiesJob-Trigger2")
+    //    .WithSimpleSchedule(x => x
+    //        .WithInterval(TimeSpan.FromMinutes(2))
+    //        .RepeatForever()));
 });
 
 builder.Services.AddQuartzHostedService(q =>

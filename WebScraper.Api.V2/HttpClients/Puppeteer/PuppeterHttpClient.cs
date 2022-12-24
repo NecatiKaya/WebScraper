@@ -44,15 +44,15 @@ public class PuppeterHttpClient : CrawlerHttpClientBase
 
     public override void Configure()
     {
-       
+        throw new NotImplementedException("PuppeterHttpClient.Configure() is not implemented. Please make use of one of Configure(...) methods");
     }
 
-    public override string Crawl(string url, string? cookie, string? userAgent)
+    public override HttpClientResponse? Crawl(string url, string? cookie, string? userAgent)
     {
         throw new NotImplementedException("PuppeterHttpClient.Crawl() is not implemented. Please make use of one of CrawlAsync(...) methods");
     }
 
-    public override async Task<string> CrawlAsync(string url, string? cookie, string? userAgent)
+    public override async Task<HttpClientResponse?> CrawlAsync(string url, string? cookie, string? userAgent)
     {
         if (string.IsNullOrWhiteSpace(ExecutablePath))
         {
@@ -64,14 +64,41 @@ public class PuppeterHttpClient : CrawlerHttpClientBase
         {
             using (IPage page = await browser.NewPageAsync())
             {
-                await page.GoToAsync(url, new NavigationOptions()
+                IResponse? response = await page.GoToAsync(url, new NavigationOptions()
                 {
                     WaitUntil = new[] { WaitUntilNavigation.DOMContentLoaded }
                 });
-                string bodyHTML = await page.GetContentAsync();
-                return bodyHTML;
+               
+                if (response != null) 
+                {
+                    HttpClientCookie[]? cookies = (await page.GetCookiesAsync(url))
+                        .Where(cookie => cookie.Domain.Contains("amazon.com.tr"))
+                        .Select(cookie => new HttpClientCookie()
+                        {
+                            Value = cookie.Value,
+                            Domain = cookie.Domain,
+                            Expires = cookie.Expires,
+                            HttpOnly = cookie.HttpOnly,
+                            Name = cookie.Name,
+                            Path = cookie.Path,
+                            Secure = cookie.Secure,
+                            Session = cookie.Session,
+                            Size = cookie.Size,
+                            Url = cookie.Url,
+                        }).ToArray();
+
+                    HttpClientResponse clientResponse = new HttpClientResponse(response.Status, 
+                        response.StatusText, 
+                        await page.GetContentAsync(), 
+                        response.Request.Headers, 
+                        response.Headers, 
+                        cookies);
+                    return clientResponse;
+                }
             }
         }
+
+        return null!;
     }
 
     private string CheckAndCreateDirectory()
@@ -141,5 +168,5 @@ public class PuppeterHttpClient : CrawlerHttpClientBase
                       "--use-mock-keychain",
                 }
         };
-    }
+    }  
 }

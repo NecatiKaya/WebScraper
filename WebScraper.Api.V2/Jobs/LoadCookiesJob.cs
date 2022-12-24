@@ -5,6 +5,7 @@ using WebScraper.Api.V2.Data.Models;
 using WebScraper.Api.V2.HttpClients;
 using WebScraper.Api.V2.HttpClients.Puppeteer;
 using WebScraper.Api.V2.Logging;
+using WebScraper.Api.V2.Repositories;
 
 namespace WebScraper.Api.V2.Jobs;
 
@@ -14,30 +15,26 @@ public class LoadCookiesJob : IJob
 
     private readonly WebScraperDbContext _dbContext;
 
-    private readonly IMailSender _mailSender;
-
-    public LoadCookiesJob(ILogger<LoadCookiesJob> logger, WebScraperDbContext dbContext, IMailSender mailSender)
+    public LoadCookiesJob(ILogger<LoadCookiesJob> logger, WebScraperDbContext dbContext)
     {
         _logger = logger;
         _dbContext = dbContext;
-        _mailSender = mailSender;
     }
 
     public async Task Execute(IJobExecutionContext context)
     {
         DateTime start = DateTime.Now;
-        _logger.Log(LogLevel.Information, $"LoadCookiesJob {start.ToString()} is started.");
-
         string jobId = Guid.NewGuid().ToString();
         string jobName = nameof(LoadCookiesJob);
+        string transactionId = Guid.NewGuid().ToString();
 
-        ApplicationLogModelJar logJar = new ApplicationLogModelJar();
+        WebScraperDbContext logDb = new WebScraperDbContext();
+        ApplicationLogModelJar logJar = new ApplicationLogModelJar(logDb, _logger);
         logJar.JobName = jobName;
         logJar.JobId = jobId;
         logJar.LogAdded += LogJar_LogAdded;
 
-        ApplicationLog jobStartInformationLog = ApplicationLogBusiness.CreateInformationLog($" LoadCookiesJob {start.ToString()} is started.", jobName, jobId, start);
-        logJar.AddLog(new ApplicationLogModel(jobStartInformationLog));
+        await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(ApplicationLogBusiness.CreateInformationLog($"LoadCookiesJob is started at '{start.ToString()}'.", jobName, jobId, transactionId, start)));
 
         try
         {
@@ -47,50 +44,53 @@ public class LoadCookiesJob : IJob
                 LoggingJar = logJar
             });
             await crawlerHttp.ConfigureAsync();
-            string html = await crawlerHttp.CrawlAsync("https://www.amazon.com.tr/");
+            HttpClientResponse? response = await crawlerHttp.CrawlAsync("https://www.amazon.com.tr/");
+            if (response.HasSuccessFullStatusCode() && response.Value.Cookies is not null)
+            {
+                CookieStoreRepository repository = new CookieStoreRepository(_dbContext);
+                CookieStore[] cookies = response.Value.Cookies.Select(cookie => new CookieStore(cookie.Value)).ToArray();
+                await repository.SaveCookiesAsync(cookies);
+                await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(ApplicationLogBusiness.CreateInformationLog($"LoadCookiesJob cookies saved.", jobName, jobId, transactionId, start)));
+            }
+            else
+            {
+                await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(ApplicationLogBusiness.CreateInformationLog($"LoadCookiesJob couldn't get any cookies or exception occured.", jobName, jobId, transactionId, start)));
+            }
 
-            //PuppeterHttpClient puppeteerSharpClient = new PuppeterHttpClient(new HttpClients.ClientConfiguration()
-            //{
-            //    Logger = _logger,
-            //    LoggingJar = logJar
-            //});
-            //await puppeteerSharpClient.ConfigureAsync();
-            //string html = await puppeteerSharpClient.CrawlAsync("https://www.amazon.com.tr/");
-
-            _logger.Log(LogLevel.Information, $"LoadCookiesJob Cookie Saved");
+            await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(ApplicationLogBusiness.CreateInformationLog($"LoadCookiesJob has finished as at '{DateTime.Now.ToString()}'.", jobName, jobId, transactionId, start)));
+            _logger.Log(LogLevel.Information, $"LoadCookiesJob has finished.");
         }
         catch (PuppeteerCrawlCookieException ex)
         {
-            ApplicationLog crawlCookieErrorLog =  ApplicationLogBusiness.CreateErrorLogFromException("PuppeteerCrawlCookieException is occured in LoadCookiesJob", jobName, jobId, ex, start, DateTime.Now);
-            logJar.AddLog(new ApplicationLogModel(crawlCookieErrorLog));
+            await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(ApplicationLogBusiness.CreateErrorLogFromException("PuppeteerCrawlCookieException is occured in LoadCookiesJob", jobName, jobId, transactionId, ex, start, DateTime.Now)));
         }
         catch (PuppeteerDirectoryAccessException ex)
         {
-            ApplicationLog directoryAccessErrorLog =  ApplicationLogBusiness.CreateErrorLogFromException("PuppeteerDirectoryAccessException is occured in LoadCookiesJob", jobName, jobId, ex, start, DateTime.Now);
-            logJar.AddLog(new ApplicationLogModel(directoryAccessErrorLog));
+            await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(ApplicationLogBusiness.CreateErrorLogFromException("PuppeteerDirectoryAccessException is occured in LoadCookiesJob", jobName, jobId, transactionId, ex, start, DateTime.Now)));
         }
         catch (PuppeteerDownloadException ex)
         {
-            ApplicationLog downloadErrorLog = ApplicationLogBusiness.CreateErrorLogFromException("PuppeteerDownloadException is occured in LoadCookiesJob", jobName, jobId, ex, start, DateTime.Now);
-            logJar.AddLog(new ApplicationLogModel(downloadErrorLog));
+            await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(ApplicationLogBusiness.CreateErrorLogFromException("PuppeteerDownloadException is occured in LoadCookiesJob", jobName, jobId, transactionId, ex, start, DateTime.Now)));
         }
         catch (PuppeteerExecutablePathException ex)
         {
-            ApplicationLog executablePathErrorLog = ApplicationLogBusiness.CreateErrorLogFromException("PuppeteerExecutablePathException is occured in LoadCookiesJob", jobName, jobId, ex, start, DateTime.Now);
-            logJar.AddLog(new ApplicationLogModel(executablePathErrorLog));
+            await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(ApplicationLogBusiness.CreateErrorLogFromException("PuppeteerExecutablePathException is occured in LoadCookiesJob", jobName, jobId, transactionId, ex, start, DateTime.Now)));
         }
         catch (Exception ex)
         {
-            ApplicationLog errorLog = ApplicationLogBusiness.CreateErrorLogFromException("Exception is occured in LoadCookiesJob", jobName, jobId, ex, start, DateTime.Now);
-            logJar.AddLog(new ApplicationLogModel(errorLog));
+            await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(ApplicationLogBusiness.CreateErrorLogFromException("Exception is occured in LoadCookiesJob", jobName, jobId, transactionId, ex, start, DateTime.Now)));
         }
         finally
         {
             DateTime finish = DateTime.Now;
-            ApplicationLog jobEndInformationLog = ApplicationLogBusiness.CreateInformationLog($"LoadCookiesJob {finish.ToString()} is finished.", jobName, jobId, finish, finish - start);
-            logJar.AddLog(new ApplicationLogModel(jobEndInformationLog));
-
+            ApplicationLog jobEndInformationLog = ApplicationLogBusiness.CreateInformationLog($"LoadCookiesJob {DateTime.Now.ToString()} is finished.", jobName, jobId, transactionId, finish, finish - start);
+            await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(jobEndInformationLog));
+            await logJar.SaveAppLogsIfNeededAsync(true);
             logJar.LogAdded -= LogJar_LogAdded;
+            if (logDb is not null)
+            {
+                await logDb.DisposeAsync();
+            }
         }
     }
 
@@ -98,7 +98,5 @@ public class LoadCookiesJob : IJob
     {
         ApplicationLogModelJar jar = (sender as ApplicationLogModelJar)!;
         ApplicationLog appLog = e.ApplicationLogModel.AppLog;
-        
-
     }
 }

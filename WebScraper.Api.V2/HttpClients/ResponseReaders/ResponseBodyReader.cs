@@ -4,7 +4,7 @@ namespace WebScraper.Api.V2.HttpClients.ResponseReaders;
 
 public class ResponseBodyReader : IResponseReader
 {
-    public void ReadResponse()
+    public string? ReadResponse()
     {
         throw new NotImplementedException();
     }

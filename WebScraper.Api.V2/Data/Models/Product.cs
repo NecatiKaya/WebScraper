@@ -2,12 +2,12 @@
 
 public class Product
 {
-    public Product(string name, string barcode, string asin, string trendyolUrl, string amazonUrl)
+    public Product(string name, string barcode, string aSIN, string trendyolUrl, string amazonUrl)
     {
         ScraperVisits = new List<ScraperVisit>();
         Name = name;
         Barcode = barcode;
-        ASIN = asin;
+        ASIN = aSIN;
         TrendyolUrl = trendyolUrl;
         AmazonUrl = amazonUrl;
     }

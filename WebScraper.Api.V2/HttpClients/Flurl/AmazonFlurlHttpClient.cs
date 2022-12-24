@@ -22,12 +22,12 @@ public class AmazonFlurlHttpClient : CrawlerHttpClientBase
         throw new NotImplementedException();
     }
 
-    public override string Crawl(string url, string? cookie, string? userAgent)
+    public override HttpClientResponse? Crawl(string url, string? cookie, string? userAgent)
     {
         throw new NotImplementedException("AmazonFlurlHttpClient.Crawl() is not implemented. Please make use of one of CrawlAsync(...) methods");
     }
 
-    public override Task<string> CrawlAsync(string url, string? cookie, string? userAgent)
+    public override Task<HttpClientResponse?> CrawlAsync(string url, string? cookie, string? userAgent)
     {
         throw new NotImplementedException();
     }

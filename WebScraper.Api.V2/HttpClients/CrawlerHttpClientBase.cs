@@ -10,20 +10,20 @@ public abstract class CrawlerHttpClientBase
 
     public string? RequestId { get; set; }
 
-    public virtual string Crawl(string url)
+    public virtual HttpClientResponse? Crawl(string url)
     {
         OnPreCrawl();
         return Crawl(url, null, null);
     }
 
-    public abstract string Crawl(string url, string? cookie, string? userAgent);
+    public abstract HttpClientResponse? Crawl(string url, string? cookie, string? userAgent);
 
-    public virtual Task<string> CrawlAsync(string url)
+    public virtual Task<HttpClientResponse?> CrawlAsync(string url)
     {
         return CrawlAsync(url, null, null);
     }
 
-    public abstract Task<string> CrawlAsync(string url, string? cookie, string? userAgent);
+    public abstract Task<HttpClientResponse?> CrawlAsync(string url, string? cookie, string? userAgent);
 
     public abstract void Configure();
 

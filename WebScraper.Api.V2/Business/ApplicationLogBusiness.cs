@@ -19,7 +19,7 @@ public class ApplicationLogBusiness
         await _applicationLogRepository.AddAsync(log);
     }
 
-    public static ApplicationLog CreateErrorLogFromException(string description, string jobName, string jobId, Exception ex, DateTime? operationStartDate = null, DateTime? errorDate = null, string? url = null, string? requestId = null)
+    public static ApplicationLog CreateErrorLogFromException(string description, string jobName, string jobId, string transactionId, Exception ex, DateTime? operationStartDate = null, DateTime? errorDate = null, string? url = null, string? requestId = null)
     {
         DateTime nowDate = DateTime.Now;
         TimeSpan? duration = null;
@@ -34,6 +34,7 @@ public class ApplicationLogBusiness
             ErrorMessage = ex.Message,
             ExceptionType = ex.GetType().Name,
             StackTrace = ex.StackTrace,
+            TransactionId = transactionId,
         };
 
         if (operationStartDate is not null)
@@ -66,7 +67,7 @@ public class ApplicationLogBusiness
         return errorLog;
     }
 
-    public static ApplicationLog CreateInformationLog(string description, string jobName, string jobId, DateTime date, TimeSpan? duration = null)
+    public static ApplicationLog CreateInformationLog(string description, string jobName, string jobId, string transactionId, DateTime date, TimeSpan? duration = null)
     {
         ApplicationLog appLog = new ApplicationLog();
         appLog.JobName = jobName;
@@ -75,7 +76,7 @@ public class ApplicationLogBusiness
         appLog.Description = description;
         appLog.Level = LogLevel.Information;
         appLog.Duration = duration;
-
+        appLog.TransactionId = transactionId;
         return appLog;
     }
 

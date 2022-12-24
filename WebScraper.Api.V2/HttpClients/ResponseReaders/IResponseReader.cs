@@ -2,5 +2,5 @@
 
 public interface IResponseReader
 {
-    void ReadResponse();
+    string? ReadResponse();
 }

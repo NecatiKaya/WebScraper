@@ -2,6 +2,7 @@
 using WebScraper.Api.V2.Business;
 using WebScraper.Api.V2.Business.Email;
 using WebScraper.Api.V2.Data.Models;
+using WebScraper.Api.V2.HttpClients;
 using WebScraper.Api.V2.HttpClients.Puppeteer;
 using WebScraper.Api.V2.Logging;
 
@@ -40,13 +41,21 @@ public class LoadCookiesJob : IJob
 
         try
         {
-            PuppeterHttpClient puppeteerSharpClient = new PuppeterHttpClient(new HttpClients.ClientConfiguration()
+            CrawlerHttpClientBase crawlerHttp = new PuppeterHttpClient(new HttpClients.ClientConfiguration()
             {
                 Logger = _logger,
                 LoggingJar = logJar
             });
-            await puppeteerSharpClient.ConfigureAsync();
-            string html = await puppeteerSharpClient.CrawlAsync("https://www.amazon.com.tr/");
+            await crawlerHttp.ConfigureAsync();
+            string html = await crawlerHttp.CrawlAsync("https://www.amazon.com.tr/");
+
+            //PuppeterHttpClient puppeteerSharpClient = new PuppeterHttpClient(new HttpClients.ClientConfiguration()
+            //{
+            //    Logger = _logger,
+            //    LoggingJar = logJar
+            //});
+            //await puppeteerSharpClient.ConfigureAsync();
+            //string html = await puppeteerSharpClient.CrawlAsync("https://www.amazon.com.tr/");
 
             _logger.Log(LogLevel.Information, $"LoadCookiesJob Cookie Saved");
         }
@@ -80,7 +89,6 @@ public class LoadCookiesJob : IJob
             DateTime finish = DateTime.Now;
             ApplicationLog jobEndInformationLog = ApplicationLogBusiness.CreateInformationLog($"LoadCookiesJob {finish.ToString()} is finished.", jobName, jobId, finish, finish - start);
             logJar.AddLog(new ApplicationLogModel(jobEndInformationLog));
-
 
             logJar.LogAdded -= LogJar_LogAdded;
         }

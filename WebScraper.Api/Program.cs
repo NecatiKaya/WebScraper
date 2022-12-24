@@ -102,14 +102,14 @@ builder.Services.AddQuartz(q =>
 {
     q.UseMicrosoftDependencyInjectionJobFactory();
 
-    //JobKey crawlJobKey = new JobKey("CrawlJob");
-    //q.AddJob<CrawlJob>(opts => opts.WithIdentity(crawlJobKey));
-    //q.AddTrigger(opts => opts
-    //    .ForJob(crawlJobKey)
-    //    .WithIdentity("CrawlJob-Trigger")
-    //    .WithSimpleSchedule(x => x
-    //        .WithInterval(TimeSpan.FromMinutes(15))
-    //        .RepeatForever()));
+    JobKey crawlJobKey = new JobKey("CrawlJob");
+    q.AddJob<CrawlJob>(opts => opts.WithIdentity(crawlJobKey));
+    q.AddTrigger(opts => opts
+        .ForJob(crawlJobKey)
+        .WithIdentity("CrawlJob-Trigger")
+        .WithSimpleSchedule(x => x
+            .WithInterval(TimeSpan.FromMinutes(30))
+            .RepeatForever()));
 
     JobKey cookieLoadJobJobKey = new JobKey("LoadCookiesJob");
     q.AddJob<LoadCookiesJob>(opts => opts.WithIdentity(cookieLoadJobJobKey));

@@ -5,7 +5,7 @@ public class WebScrapingException : Exception
 {
     public int StatusCode { get; set; }
 
-    public string Url { get; set; }
+    public string? Url { get; set; }
 
     public string? HttpResponse { get; set; }
 

@@ -1,4 +1,6 @@
-﻿namespace WebScraper.Api.V2.Data.Dto;
+﻿using WebScraper.Api.V2.Data.Models;
+
+namespace WebScraper.Api.V2.Data.Dto;
 
 public class ProductPriceInformation
 {
@@ -9,4 +11,6 @@ public class ProductPriceInformation
     public decimal? CurrentDiscountAsAmount { get; set; }
 
     public decimal? CurrentDiscountAsPercentage { get; set; }
+
+    public PriceNotFoundReasons NotFoundReason { get; set; } = PriceNotFoundReasons.Initial;
 }

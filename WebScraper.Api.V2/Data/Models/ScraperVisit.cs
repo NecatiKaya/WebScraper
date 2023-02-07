@@ -42,5 +42,7 @@ public class ScraperVisit
 
     public string? UsedUserAgentValue { get; set; }
 
-    public PriceNotFoundReasons? PriceNotFoundReason { get; set; }
+    public PriceNotFoundReasons AmazonPriceNotFoundReason { get; set; } = PriceNotFoundReasons.Initial;
+
+    public PriceNotFoundReasons TrendyolPriceNotFoundReason { get; set; } = PriceNotFoundReasons.Initial;
 }

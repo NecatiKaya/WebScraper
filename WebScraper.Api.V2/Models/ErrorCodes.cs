@@ -5,6 +5,8 @@ public enum ErrorCodes
     AmazonBotDetected = -1000,
     AmazonBotDetectedAndRetry = -1001,
     TooManyRequest = -2000,
+    HttpClientNotConfigured = -1,
+    CrawlingUrlNotFound = -2,
     /* ]Web Client Errors */
 
     /* Puppeteer Errors[ */

@@ -1,4 +1,5 @@
 using Flurl.Http;
+using Flurl.Http.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Quartz;
 using System.Net;
@@ -35,6 +36,8 @@ if (emailConfig is not null)
     builder.Services.AddSingleton(emailConfig);
 }
 builder.Services.AddScoped<IMailSender, MailSender>();
+
+builder.Services.AddSingleton<IFlurlClientFactory, PerBaseUrlFlurlClientFactory>();
 
 FlurlHttp.ConfigureClient("https://www.amazon.com.tr", (settings) =>
 {
@@ -87,29 +90,22 @@ builder.Services.AddQuartz(q =>
 {
     q.UseMicrosoftDependencyInjectionJobFactory();
 
-    //JobKey crawlJobKey = new JobKey("CrawlJob");
-    //q.AddJob<CrawlJob>(opts => opts.WithIdentity(crawlJobKey));
-    //q.AddTrigger(opts => opts
-    //    .ForJob(crawlJobKey)
-    //    .WithIdentity("CrawlJob-Trigger")
-    //    .WithSimpleSchedule(x => x
-    //        .WithInterval(TimeSpan.FromMinutes(15))
-    //        .RepeatForever()));
-
-    JobKey cookieLoadJobJobKey = new JobKey("LoadCookiesJob");
-    q.AddJob<LoadCookiesJob>(opts => opts.WithIdentity(cookieLoadJobJobKey));
+    JobKey crawlJobKey = new JobKey("CrawlJob");
+    q.AddJob<CrawlJob>(opts => opts.WithIdentity(crawlJobKey));
     q.AddTrigger(opts => opts
-        .ForJob(cookieLoadJobJobKey)
-        .WithIdentity("LoadCookiesJob-Trigger")
+        .ForJob(crawlJobKey)
+        .WithIdentity("CrawlJob-Trigger")
         .WithSimpleSchedule(x => x
-            .WithInterval(TimeSpan.FromMinutes(10))
+            .WithInterval(TimeSpan.FromMinutes(15))
             .RepeatForever()));
 
+    //JobKey cookieLoadJobJobKey = new JobKey("LoadCookiesJob");
+    //q.AddJob<LoadCookiesJob>(opts => opts.WithIdentity(cookieLoadJobJobKey));
     //q.AddTrigger(opts => opts
     //    .ForJob(cookieLoadJobJobKey)
-    //    .WithIdentity("LoadCookiesJob-Trigger2")
+    //    .WithIdentity("LoadCookiesJob-Trigger")
     //    .WithSimpleSchedule(x => x
-    //        .WithInterval(TimeSpan.FromMinutes(2))
+    //        .WithInterval(TimeSpan.FromMinutes(10))
     //        .RepeatForever()));
 });
 

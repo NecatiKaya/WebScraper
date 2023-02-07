@@ -31,7 +31,9 @@ public class AddScraperVisitDto
 
     public string? UsedUserAgentValue { get; set; }
 
-    public PriceNotFoundReasons? PriceNotFoundReason { get; set; }
+    public PriceNotFoundReasons? AmazonPriceNotFoundReason { get; set; }
+
+    public PriceNotFoundReasons? TrendyolPriceNotFoundReason { get; set; }
 
     public Data.Models.ScraperVisit ToScraperVisit()
     {
@@ -53,7 +55,8 @@ public class AddScraperVisitDto
             NeedToNotify = NeedToNotify,
             Notified = Notified,
             VisitDate = VisitDate,
-            PriceNotFoundReason = PriceNotFoundReason,
+            AmazonPriceNotFoundReason = AmazonPriceNotFoundReason ?? PriceNotFoundReasons.Initial,
+            TrendyolPriceNotFoundReason = TrendyolPriceNotFoundReason ?? PriceNotFoundReasons.Initial,
             LogId = LogId,
             UsedCookieValue = UsedCookieValue,
             UsedUserAgentValue = UsedUserAgentValue

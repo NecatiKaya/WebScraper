@@ -108,7 +108,7 @@ builder.Services.AddQuartz(q =>
         .ForJob(crawlJobKey)
         .WithIdentity("CrawlJob-Trigger")
         .WithSimpleSchedule(x => x
-            .WithInterval(TimeSpan.FromMinutes(30))
+            .WithInterval(TimeSpan.FromMinutes(45))
             .RepeatForever()));
 
     JobKey cookieLoadJobJobKey = new JobKey("LoadCookiesJob");

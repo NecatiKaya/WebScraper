@@ -16,7 +16,7 @@ public class PuppeterHttpClient : CrawlerHttpClientBase
         string downloadPath = CheckAndCreateDirectory();
 
         BrowserFetcherOptions browserFetcherOptions = new BrowserFetcherOptions { Path = downloadPath };
-        
+
         using (BrowserFetcher browserFetcher = new BrowserFetcher(browserFetcherOptions))
         {
             if (!await browserFetcher.CanDownloadAsync(BrowserFetcher.DefaultChromiumRevision))
@@ -47,12 +47,12 @@ public class PuppeterHttpClient : CrawlerHttpClientBase
         throw new NotImplementedException("PuppeterHttpClient.Configure() is not implemented. Please make use of one of Configure(...) methods");
     }
 
-    public override HttpClientResponse? Crawl(string url, string? cookie, string? userAgent)
+    public override HttpClientResponse? Crawl(Data.Models.Product product, string? cookie, string? userAgent)
     {
         throw new NotImplementedException("PuppeterHttpClient.Crawl() is not implemented. Please make use of one of CrawlAsync(...) methods");
     }
 
-    public override async Task<HttpClientResponse?> CrawlAsync(string url, string? cookie, string? userAgent)
+    public override async Task<HttpClientResponse?> CrawlAsync(Data.Models.Product product, string? cookie, string? userAgent, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(ExecutablePath))
         {
@@ -64,14 +64,14 @@ public class PuppeterHttpClient : CrawlerHttpClientBase
         {
             using (IPage page = await browser.NewPageAsync())
             {
-                IResponse? response = await page.GoToAsync(url, new NavigationOptions()
+                IResponse? response = await page.GoToAsync(product.AmazonUrl, new NavigationOptions()
                 {
                     WaitUntil = new[] { WaitUntilNavigation.DOMContentLoaded }
                 });
-               
-                if (response != null) 
+
+                if (response != null)
                 {
-                    HttpClientCookie[]? cookies = (await page.GetCookiesAsync(url))
+                    HttpClientCookie[]? cookies = (await page.GetCookiesAsync(product.AmazonUrl))
                         .Where(cookie => cookie.Domain.Contains("amazon.com.tr"))
                         .Select(cookie => new HttpClientCookie()
                         {
@@ -87,12 +87,13 @@ public class PuppeterHttpClient : CrawlerHttpClientBase
                             Url = cookie.Url,
                         }).ToArray();
 
-                    HttpClientResponse clientResponse = new HttpClientResponse(response.Status, 
-                        response.StatusText, 
-                        await page.GetContentAsync(), 
-                        response.Request.Headers, 
-                        response.Headers, 
-                        cookies);
+                    HttpClientResponse clientResponse = new HttpClientResponse(response.Status,
+                        response.StatusText,
+                        await page.GetContentAsync(),
+                        GetRequestId(),
+                        response.Request.Headers,
+                        response.Headers,
+                        cookies, -1);
                     return clientResponse;
                 }
             }
@@ -168,5 +169,5 @@ public class PuppeterHttpClient : CrawlerHttpClientBase
                       "--use-mock-keychain",
                 }
         };
-    }  
+    }
 }

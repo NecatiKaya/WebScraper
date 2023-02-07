@@ -10,6 +10,8 @@ public class ApplicationLogModelJar
 
     public string? JobId { get; set; }
 
+    public string? TransactionId { get; set; }
+
     public delegate void ApplicationLogModelHandler (object sender, ApplicationLogModelEventArgs e);
 
     public event ApplicationLogModelHandler? LogAdded;
@@ -34,10 +36,10 @@ public class ApplicationLogModelJar
         }
     }
 
-    public async Task AddLogAndSaveIfNeedAsync(ApplicationLogModel model, bool saveToConsole = true)
+    public async Task AddLogAndSaveIfNeedAsync(ApplicationLogModel model, bool saveToConsole = true, bool force = false)
     {
         AddLog(model, saveToConsole);
-        await SaveAppLogsIfNeededAsync();
+        await SaveAppLogsIfNeededAsync(force);
     }
 
     public List<ApplicationLogModel> GetAllLogs()
@@ -60,7 +62,7 @@ public class ApplicationLogModelJar
     {
         if (_applicationLogModels?.Count >= 50 || (force && _applicationLogModels!.Any()))
         {
-            await _dbContext.ApplicationLogs.AddRangeAsync(_applicationLogModels!.Select(x=> x.AppLog));
+            await _dbContext.ApplicationLogs.AddRangeAsync(_applicationLogModels!.Select(x => x.AppLog));
             await _dbContext.SaveChangesAsync();
 
             Clear();

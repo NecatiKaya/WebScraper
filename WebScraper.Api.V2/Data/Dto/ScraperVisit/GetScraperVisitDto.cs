@@ -45,5 +45,7 @@ public class GetScraperVisitDto
     public string? UsedCookieValue { get; set; }
 
     public string? UsedUserAgentValue { get; set; }
-    public PriceNotFoundReasons? PriceNotFoundReason { get; set; }    
+    public PriceNotFoundReasons? AmazonPriceNotFoundReason { get; set; }
+
+    public PriceNotFoundReasons? TrendyolPriceNotFoundReason { get; set; }
 }

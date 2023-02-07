@@ -1,12 +1,8 @@
-﻿using Flurl;
-using Flurl.Http;
+﻿using Flurl.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using System.Threading;
 using WebScraper.Api.Business;
 using WebScraper.Api.Data.Models;
-using WebScraper.Api.Exceptions;
-using WebScraper.Api.HttpClients.PuppeteerClient;
 using WebScraper.Api.Utilities;
 
 namespace WebScraper.Api.HttpClients;

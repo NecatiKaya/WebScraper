@@ -8,6 +8,8 @@ public class ApplicationLog
 
     public string? TransactionId { get; set; }
 
+    public string? RequestId { get; set; }
+
     public string? Description { get; set; }
 
     public string? ErrorMessage { get; set; }

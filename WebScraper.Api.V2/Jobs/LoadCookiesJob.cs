@@ -1,6 +1,5 @@
 ﻿using Quartz;
 using WebScraper.Api.V2.Business;
-using WebScraper.Api.V2.Business.Email;
 using WebScraper.Api.V2.Data.Models;
 using WebScraper.Api.V2.HttpClients;
 using WebScraper.Api.V2.HttpClients.Puppeteer;
@@ -9,11 +8,13 @@ using WebScraper.Api.V2.Repositories;
 
 namespace WebScraper.Api.V2.Jobs;
 
-public class LoadCookiesJob : IJob
+public class LoadCookiesJob : IJob, IDisposable
 {
     private readonly ILogger<LoadCookiesJob> _logger;
 
     private readonly WebScraperDbContext _dbContext;
+
+    private bool disposedValue;
 
     public LoadCookiesJob(ILogger<LoadCookiesJob> logger, WebScraperDbContext dbContext)
     {
@@ -38,13 +39,13 @@ public class LoadCookiesJob : IJob
 
         try
         {
-            CrawlerHttpClientBase crawlerHttp = new PuppeterHttpClient(new HttpClients.ClientConfiguration()
+            CrawlerHttpClientBase crawlerHttp = new PuppeterHttpClient(new ClientConfiguration()
             {
                 Logger = _logger,
                 LoggingJar = logJar
             });
             await crawlerHttp.ConfigureAsync();
-            HttpClientResponse? response = await crawlerHttp.CrawlAsync("https://www.amazon.com.tr/");
+            HttpClientResponse? response = await crawlerHttp.CrawlAsync(new Product("AmazonHomePage", "barcode", "ASIN", "https://www.trendyol.com/", "https://www.amazon.com.tr/"));
             if (response.HasSuccessFullStatusCode() && response.Value.Cookies is not null)
             {
                 CookieStoreRepository repository = new CookieStoreRepository(_dbContext);
@@ -83,7 +84,7 @@ public class LoadCookiesJob : IJob
         finally
         {
             DateTime finish = DateTime.Now;
-            ApplicationLog jobEndInformationLog = ApplicationLogBusiness.CreateInformationLog($"LoadCookiesJob {DateTime.Now.ToString()} is finished.", jobName, jobId, transactionId, finish, finish - start);
+            ApplicationLog jobEndInformationLog = ApplicationLogBusiness.CreateInformationLog($"LoadCookiesJob is finished at {DateTime.Now.ToString()}.", jobName, jobId, transactionId, finish, finish - start);
             await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(jobEndInformationLog));
             await logJar.SaveAppLogsIfNeededAsync(true);
             logJar.LogAdded -= LogJar_LogAdded;
@@ -98,5 +99,25 @@ public class LoadCookiesJob : IJob
     {
         ApplicationLogModelJar jar = (sender as ApplicationLogModelJar)!;
         ApplicationLog appLog = e.ApplicationLogModel.AppLog;
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposedValue)
+        {
+            if (disposing)
+            {
+                _dbContext?.Dispose();
+            }
+
+            disposedValue = true;
+        }
+    }
+
+    public void Dispose()
+    {
+        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }

@@ -59,8 +59,9 @@ public class ScraperVisitRepository : RepositoryBase
                                                             RequestedPriceDifferenceAsPercentage = visit.RequestedPriceDifferenceAsPercentage,
                                                             NeedToNotify = visit.NeedToNotify,
                                                             Notified = visit.Notified,
-                                                            LogId   = visit.LogId,
-                                                            PriceNotFoundReason = visit.PriceNotFoundReason,
+                                                            LogId = visit.LogId,
+                                                            AmazonPriceNotFoundReason = visit.AmazonPriceNotFoundReason,
+                                                            TrendyolPriceNotFoundReason = visit.TrendyolPriceNotFoundReason,
                                                             UsedCookieValue = visit.UsedCookieValue,
                                                             UsedUserAgentValue = visit.UsedUserAgentValue
                                                         });
@@ -109,5 +110,15 @@ public class ScraperVisitRepository : RepositoryBase
         });
 
         await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task UpdateVisit()
+    {
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<ScraperVisit?> GetVisitById(int visitId)
+    {
+        return await _dbContext.ScraperVisits.FirstOrDefaultAsync(x => x.Id == visitId);
     }
 }

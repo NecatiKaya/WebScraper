@@ -1,5 +1,7 @@
 ﻿using Flurl.Http.Configuration;
+using Microsoft.EntityFrameworkCore;
 using Quartz;
+using System.Text;
 using System.Threading;
 using WebScraper.Api.V2.Business;
 using WebScraper.Api.V2.Business.Email;
@@ -16,17 +18,18 @@ public class CrawlJob : IJob, IDisposable
 
     private readonly WebScraperDbContext _dbContext;
 
-    private readonly IMailSender _mailSender;
+    private readonly AlertingBusiness _alertingBusiness;
 
     private readonly IFlurlClientFactory _flurlClientFac;
 
     private bool disposedValue;
 
-    public CrawlJob(ILogger<CrawlJob> logger, WebScraperDbContext dbContext, IMailSender mailSender, IFlurlClientFactory flurlClientFac, WebScraperDbContext context)
+    public CrawlJob(ILogger<CrawlJob> logger, WebScraperDbContext dbContext, 
+        AlertingBusiness alertingBusiness, IFlurlClientFactory flurlClientFac)
     {
         _logger = logger;
         _dbContext = dbContext;
-        _mailSender = mailSender;
+        _alertingBusiness = alertingBusiness;
         _flurlClientFac = flurlClientFac;
     }
 
@@ -37,34 +40,76 @@ public class CrawlJob : IJob, IDisposable
         string jobName = nameof(CrawlJob);
         string transactionId = Guid.NewGuid().ToString();
 
-        WebScraperDbContext logDb = new WebScraperDbContext();
-        ApplicationLogModelJar logJar = new ApplicationLogModelJar(logDb, _logger);
+        WebScraperLogDbContext logDbGlobal = new WebScraperLogDbContext();
+        ApplicationLogModelJar logJar = new ApplicationLogModelJar(logDbGlobal, _logger);
         logJar.JobName = jobName;
         logJar.JobId = jobId;
         logJar.TransactionId = transactionId;
         logJar.LogAdded += LogJar_LogAdded;
 
-        CrawlingOptions options = new CrawlingOptions() { RetryCountOnFail = 3};
+        CrawlingOptions options = new CrawlingOptions() { RetryCountOnFail = 3 };
         ClientConfiguration configuration = new ClientConfiguration()
         {
             Logger = _logger,
             LoggingJar = logJar
         };
-        Crawler crawler = Crawler.Create(options, _flurlClientFac, configuration, _dbContext);
+        //Crawler crawler = Crawler.Create(options, _flurlClientFac, configuration, _dbContext, logDb);
 
         try
         {
             ProductRepository productRepo = new ProductRepository(_dbContext);
             RepositoryResponseBase<Product> productData = await productRepo.GetActiveProductsAsync();
-            Product[] data = productData.Data ?? new Product[0];
+            Product[] data = productData.Data ?? Array.Empty<Product>();
             //foreach (Product eachProduct in data)
             //{
-            //    var responses = await crawler.CrawlAsync(eachProduct);
+            //    ScraperVisit visit = await crawler.CrawlAsync(eachProduct);
             //}
-            await ProcessInParallel(crawler, data);
+
+            //await _alertingBusiness.SendPriceAlertEmail();
+
+
+            //await ProcessInParallel(crawler, data);
+
+            int batchSize = 50;
+            int numberOfBatches = (int)Math.Ceiling((double)data.Length / batchSize);
+
+            for (int i = 0; i < numberOfBatches; i++)
+            {
+                List<Product> productsPerTask = data.Skip(i * batchSize).Take(batchSize).ToList();
+                if (productsPerTask is null)
+                {
+                    continue;
+                }
+
+                var tasksForEachProduct = productsPerTask.Select(eachProduct =>
+                {
+                    WebScraperDbContext context = new WebScraperDbContext();
+                    WebScraperLogDbContext logDb = new WebScraperLogDbContext();
+                    ApplicationLogModelJar logJar = new ApplicationLogModelJar(logDb, _logger);
+                    logJar.JobName = jobName;
+                    logJar.JobId = jobId;
+                    logJar.TransactionId = transactionId;
+                    logJar.LogAdded += LogJar_LogAdded;
+
+                    CrawlingOptions options = new CrawlingOptions() { RetryCountOnFail = 3 };
+                    ClientConfiguration configuration = new ClientConfiguration()
+                    {
+                        Logger = _logger,
+                        LoggingJar = logJar
+                    };
+
+                    Crawler crawler = new Crawler();
+                    return crawler.CrawlAsync(eachProduct, _flurlClientFac, configuration, context, logDb);
+                });
+                await Task.WhenAll(tasksForEachProduct);
+            }
+            await _alertingBusiness.SendPriceAlertEmail();            
 
             DateTime end = DateTime.Now;
             TimeSpan difference = end - start;
+
+            ApplicationLog appLog = ApplicationLogBusiness.CreateInformationLog($"Crawl job duration as miliseconds :'{difference.Milliseconds}'", jobName, jobId, transactionId, DateTime.Now, difference);
+            await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(appLog));
         }
         catch (Exception ex)
         {
@@ -77,37 +122,37 @@ public class CrawlJob : IJob, IDisposable
             await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(jobEndInformationLog), force: true);
             //await logJar.SaveAppLogsIfNeededAsync(true);
             logJar.LogAdded -= LogJar_LogAdded;
-            if (logDb is not null)
+            if (logDbGlobal is not null)
             {
-                await logDb.DisposeAsync();
+                await logDbGlobal.DisposeAsync();
             }
             _flurlClientFac?.Dispose();
         }
     }
 
-    private async Task<(HttpClientResponse?, HttpClientResponse?)[]?> ProcessInParallel(Crawler crawler, Product[] products)
-    {
-        var tasks = new List<Task<(HttpClientResponse?, HttpClientResponse?)>>();
-        int numberOfRequests = products.Length;
-        int maxParallelRequests = 1;
-        var semaphoreSlim = new SemaphoreSlim(maxParallelRequests, maxParallelRequests);
+    //private async Task<ScraperVisit?[]> ProcessInParallel(Crawler crawler, Product[] products)
+    //{
+    //    var tasks = new List<Task<ScraperVisit?>>();
+    //    int numberOfRequests = products.Length;
+    //    int maxParallelRequests = numberOfRequests;
+    //    var semaphoreSlim = new SemaphoreSlim(maxParallelRequests, maxParallelRequests);
 
-        for (int i = 0; i < numberOfRequests; ++i)
-        {
-            tasks.Add(CrawlProductWithSemaphore(crawler, products[i], semaphoreSlim));
-        }
+    //    for (int i = 0; i < numberOfRequests; ++i)
+    //    {
+    //        tasks.Add(CrawlProductWithSemaphore(crawler, products[i], semaphoreSlim));
+    //    }
 
-        return await Task.WhenAll(tasks.ToArray());
-    }
+    //    return await Task.WhenAll(tasks.ToArray());
+    //}
 
-    private async Task<(HttpClientResponse?, HttpClientResponse?)> CrawlProductWithSemaphore(Crawler crawler, Product product, SemaphoreSlim semaphore)
-    {
-        await semaphore.WaitAsync();
-        var response = await crawler.CrawlAsync(product);
-        //Thread.Sleep(10000);
-        semaphore.Release();
-        return response;
-    }
+    //private async Task<ScraperVisit?> CrawlProductWithSemaphore(Crawler crawler, Product product, SemaphoreSlim semaphore)
+    //{
+    //    await semaphore.WaitAsync();
+    //    ScraperVisit? visit = await crawler.CrawlAsync(product);
+    //    //Thread.Sleep(10000);
+    //    semaphore.Release();
+    //    return visit;
+    //}
 
     private void LogJar_LogAdded(object sender, ApplicationLogModelEventArgs e)
     {

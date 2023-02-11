@@ -43,7 +43,7 @@ public class ApplicationLogBusiness
             TransactionId = transactionId,
             ProductId = productId,
             Url = url,
-            ResponseHtml = responseHtml,
+            //ResponseHtml = responseHtml,
             RequestHeadersAsString = requestHeaders,
             ResponseHeadersAsString = responseHeaders,
             ScraperVisitId = visitId,
@@ -142,7 +142,7 @@ public class ApplicationLogBusiness
             TransactionId = transactionId,
             ProductId = productId,
             Url = url,
-            ResponseHtml = responseHtml,
+            //ResponseHtml = responseHtml,
             RequestHeadersAsString = requestHeaders,
             ResponseHeadersAsString = responseHeaders,
             ScraperVisitId = visitId,
@@ -185,10 +185,10 @@ public class ApplicationLogBusiness
                 {
                     errorLog.RequestHeadersAsString = ConvertToJson(_ex.HttpRequestHeaders);
                 }
-                if (responseHtml is null)
-                {
-                    errorLog.ResponseHtml = _ex.HttpResponse;
-                }
+                //if (responseHtml is null)
+                //{
+                //    errorLog.ResponseHtml = _ex.HttpResponse;
+                //}
                 if (statusCode is null)
                 {
                     errorLog.StatusCode = _ex.StatusCode;
@@ -214,17 +214,17 @@ public class ApplicationLogBusiness
                     errorLog.Url = httpEx!.Call.Request?.Url;
                 }                
                 errorLog.IsTimeoutEx = isTimeoutEx;
-                if (responseHtml is null)
-                {
-                    errorLog.ResponseHtml = !isTimeoutEx ? await httpEx!.GetResponseStringAsync() : null;
-                }
+                //if (responseHtml is null)
+                //{
+                //    errorLog.ResponseHtml = !isTimeoutEx ? await httpEx!.GetResponseStringAsync() : null;
+                //}
                 if (statusCode is null)
                 {
                     errorLog.StatusCode = httpEx!.StatusCode;
                 }
                 if (requestHeaders is null)
                 {
-                    errorLog.RequestHeadersAsString = !isTimeoutEx ? GetRequestHeadersAsString(httpEx?.Call?.HttpRequestMessage?.Headers) : null; 
+                    errorLog.RequestHeadersAsString = !isTimeoutEx ? GetRequestHeadersAsString(httpEx?.Call?.HttpRequestMessage?.Headers) : null;
                 }
                 if (responseHeaders is null)
                 {
@@ -251,7 +251,7 @@ public class ApplicationLogBusiness
         appLog.RequestId = requestId;
         appLog.RequestHeadersAsString = requestHeaders;
         appLog.ResponseHeadersAsString = responseHeaders;
-        appLog.ResponseHtml = html;
+        //appLog.ResponseHtml = html;
         appLog.ScraperVisitId = visitId;
         appLog.StatusCode = statusCode;
         return appLog;

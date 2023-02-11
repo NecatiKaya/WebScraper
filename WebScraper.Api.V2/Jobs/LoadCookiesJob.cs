@@ -29,7 +29,7 @@ public class LoadCookiesJob : IJob, IDisposable
         string jobName = nameof(LoadCookiesJob);
         string transactionId = Guid.NewGuid().ToString();
 
-        WebScraperDbContext logDb = new WebScraperDbContext();
+        WebScraperLogDbContext logDb = new WebScraperLogDbContext();
         ApplicationLogModelJar logJar = new ApplicationLogModelJar(logDb, _logger);
         logJar.JobName = jobName;
         logJar.JobId = jobId;
@@ -48,7 +48,7 @@ public class LoadCookiesJob : IJob, IDisposable
             HttpClientResponse? response = await crawlerHttp.CrawlAsync(new Product("AmazonHomePage", "barcode", "ASIN", "https://www.trendyol.com/", "https://www.amazon.com.tr/"));
             if (response.HasSuccessFullStatusCode() && response.Value.Cookies is not null)
             {
-                CookieStoreRepository repository = new CookieStoreRepository(_dbContext);
+                CookieStoreRepository repository = new CookieStoreRepository(logDb);
                 CookieStore[] cookies = response.Value.Cookies.Select(cookie => new CookieStore(cookie.Value)).ToArray();
                 await repository.SaveCookiesAsync(cookies);
                 await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(ApplicationLogBusiness.CreateInformationLog($"LoadCookiesJob cookies saved.", jobName, jobId, transactionId, start)));
@@ -85,8 +85,7 @@ public class LoadCookiesJob : IJob, IDisposable
         {
             DateTime finish = DateTime.Now;
             ApplicationLog jobEndInformationLog = ApplicationLogBusiness.CreateInformationLog($"LoadCookiesJob is finished at {DateTime.Now.ToString()}.", jobName, jobId, transactionId, finish, finish - start);
-            await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(jobEndInformationLog));
-            await logJar.SaveAppLogsIfNeededAsync(true);
+            await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(jobEndInformationLog), force: true);
             logJar.LogAdded -= LogJar_LogAdded;
             if (logDb is not null)
             {

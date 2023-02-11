@@ -3,9 +3,9 @@ using WebScraper.Api.V2.Data.Models;
 
 namespace WebScraper.Api.V2.Repositories;
 
-public class CookieStoreRepository : RepositoryBase
+public class CookieStoreRepository : LogDbRepositoryBase
 {
-    public CookieStoreRepository(WebScraperDbContext context) : base(context)
+    public CookieStoreRepository(WebScraperLogDbContext context) : base(context)
     {
 
     }

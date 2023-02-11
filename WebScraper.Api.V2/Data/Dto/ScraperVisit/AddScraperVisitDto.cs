@@ -7,7 +7,9 @@ public class AddScraperVisitDto
 {
     public int ProductId { get; set; }
 
-    public DateTime VisitDate { get; set; }
+    public DateTime StartDate { get; set; }
+
+    public DateTime? EndDate { get; set; }
 
     public ProductPriceInformation? AmazonPrice { get; set; }
 
@@ -54,7 +56,8 @@ public class AddScraperVisitDto
             RequestedPriceDifferenceAsPercentage = RequestedPriceDifferenceAsPercentage,
             NeedToNotify = NeedToNotify,
             Notified = Notified,
-            VisitDate = VisitDate,
+            StartDate = StartDate,
+            EndDate = EndDate,
             AmazonPriceNotFoundReason = AmazonPriceNotFoundReason ?? PriceNotFoundReasons.Initial,
             TrendyolPriceNotFoundReason = TrendyolPriceNotFoundReason ?? PriceNotFoundReasons.Initial,
             LogId = LogId,

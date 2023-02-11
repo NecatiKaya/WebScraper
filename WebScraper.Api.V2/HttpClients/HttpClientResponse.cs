@@ -4,7 +4,8 @@ namespace WebScraper.Api.V2.HttpClients;
 
 public readonly struct HttpClientResponse
 {
-    public HttpClientResponse(HttpStatusCode? statusCode, string? statusText, string? html, string? requestId, IReadOnlyDictionary<string, string>? requestHeaders, IReadOnlyDictionary<string, string>? responseHeaders, HttpClientCookie[]? cookies, int visitId)
+    public HttpClientResponse(HttpStatusCode? statusCode, string? statusText, string? html, string? requestId, IReadOnlyDictionary<string, string>? requestHeaders, IReadOnlyDictionary<string, string>? responseHeaders, 
+HttpClientCookie[]? cookies, bool isBotDetected = false)
     {
         Status = statusCode;
         StatusText = statusText;
@@ -13,7 +14,7 @@ public readonly struct HttpClientResponse
         RequestHeaders = requestHeaders;
         Cookies = cookies;
         RequestId = requestId;
-        ScraperVisitId = visitId;
+        IsBotDetected = isBotDetected;
     }
 
     public string? ContentHtml { get; }
@@ -30,5 +31,5 @@ public readonly struct HttpClientResponse
 
     public string? RequestId { get; }
 
-    public int ScraperVisitId { get; }
+    public bool IsBotDetected { get; }
 }

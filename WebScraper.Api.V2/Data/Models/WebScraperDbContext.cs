@@ -8,13 +8,13 @@ public class WebScraperDbContext : DbContext
 
     public DbSet<ScraperVisit> ScraperVisits { get; set; }
 
-    public DbSet<UserAgentString> UserAgentStrings { get; set; }
+    //public DbSet<UserAgentString> UserAgentStrings { get; set; }
 
-    public DbSet<CookieStore> CookieStores { get; set; }
+    //public DbSet<CookieStore> CookieStores { get; set; }
 
-    public DbSet<ApplicationLog> ApplicationLogs { get; set; }
+    //public DbSet<ApplicationLog> ApplicationLogs { get; set; }
 
-    public WebScraperDbContext(DbContextOptions options) : base(options) { }
+    public WebScraperDbContext(DbContextOptions<WebScraperDbContext> options) : base(options) { }
 
     public WebScraperDbContext()
     {

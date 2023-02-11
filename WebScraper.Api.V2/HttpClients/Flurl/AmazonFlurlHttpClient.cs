@@ -17,6 +17,8 @@ public sealed class AmazonFlurlHttpClient : CrawlerHttpClientBase, IDisposable
 
     private readonly WebScraperDbContext _dbContext;
 
+    private readonly WebScraperLogDbContext _logDbContext;
+
     private UserAgentStringRepository? userAgentRepository;
 
     private CookieStoreRepository? cookieStoreRepository;
@@ -27,17 +29,18 @@ public sealed class AmazonFlurlHttpClient : CrawlerHttpClientBase, IDisposable
 
     private bool disposedValue;
 
-    public AmazonFlurlHttpClient(IFlurlClientFactory flurlClientFac, ClientConfiguration clientConfiguration, WebScraperDbContext context) : base(clientConfiguration)
+    public AmazonFlurlHttpClient(IFlurlClientFactory flurlClientFac, ClientConfiguration clientConfiguration, WebScraperDbContext context, WebScraperLogDbContext logDbContext) : base(clientConfiguration)
     {
         _flurlClientFac = flurlClientFac;
         _dbContext = context;
+        _logDbContext = logDbContext;
     }
 
     public override void Configure()
     {
         _flurlClient = _flurlClientFac.Get("https://www.amazon.com.tr/");
-        userAgentRepository = new UserAgentStringRepository(_dbContext);
-        cookieStoreRepository = new CookieStoreRepository(_dbContext);
+        userAgentRepository = new UserAgentStringRepository(_logDbContext);
+        cookieStoreRepository = new CookieStoreRepository(_logDbContext);
         isConfigured = true;
     }
 
@@ -57,15 +60,6 @@ public sealed class AmazonFlurlHttpClient : CrawlerHttpClientBase, IDisposable
         string jobId = Options?.LoggingJar?.JobId ?? "#JOBID#NOT#SPECIFIED";
         string jobName = Options?.LoggingJar?.JobName?? "#JOBNAME#NOT#SPECIFIED";
         string transactionId = Options?.LoggingJar?.TransactionId ?? "#TRANSACTIONID#NOT#SPECIFIED";
-
-        ScraperVisitRepository scraperVisitRepository = new ScraperVisitRepository(_dbContext);
-        ScraperVisit scraperVisit = new ScraperVisit()
-        {
-            NeedToNotify = false,
-            Notified = false,
-            ProductId = product.Id,
-            VisitDate = DateTime.Now
-        };
 
         if (!isConfigured)
         {
@@ -106,95 +100,84 @@ public sealed class AmazonFlurlHttpClient : CrawlerHttpClientBase, IDisposable
             response.ResponseMessage.EnsureSuccessStatusCode();
             string html = await response.GetStringAsync();
 
-            await scraperVisitRepository.AddVisitsAsync(new ScraperVisit[] { scraperVisit });
-
             HttpClientCookie[]? cookies = GetCookies(response);
             HttpStatusCode statusCode = (HttpStatusCode)response.StatusCode;
             IReadOnlyDictionary<string, string> requestHeaders = response.GetHeadersAsDictionary(false);
             IReadOnlyDictionary<string, string> responseHeaders = response.GetHeadersAsDictionary(true);
 
-            ApplicationLog applicationLog = ApplicationLogBusiness.CreateInformationLog($"Product ('{product.Id} - {product.Name}') has been crawled.", jobName, jobId, transactionId, start, DateTime.Now - start, product.AmazonUrl, product.Id, GetRequestId(), html, JsonSerializer.Serialize(requestHeaders), JsonSerializer.Serialize(responseHeaders), scraperVisit.Id, response.StatusCode);
+            ApplicationLog applicationLog = ApplicationLogBusiness.CreateInformationLog($"Product ('{product.Id} - {product.Name}') has been crawled.", jobName, jobId, transactionId, start, DateTime.Now - start, product.AmazonUrl, product.Id, GetRequestId(), html, JsonSerializer.Serialize(requestHeaders), JsonSerializer.Serialize(responseHeaders), null, response.StatusCode);
 
-            await AddLogAsync(applicationLog);
+            if (Options is not null && Options.LoggingJar is not null)
+            {
+                await Options.LoggingJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(applicationLog));
+            }
 
             if (html.ToLower().Contains("sadece robot olma"))
             {               
                 throw new AmazonBotDetectedException(product.AmazonUrl, product.Id, null, html, null, null);
             }
 
-            HttpClientResponse clientResponse = new HttpClientResponse(statusCode, statusCode.ToString(), html, GetRequestId(), requestHeaders, responseHeaders, cookies, scraperVisit.Id);
+            HttpClientResponse clientResponse = new HttpClientResponse(statusCode, statusCode.ToString(), html, GetRequestId(), requestHeaders, responseHeaders, cookies);
             return clientResponse;
         }
         catch (AmazonBotDetectedException botDetectedEx)
         {
-            scraperVisit.AmazonPriceNotFoundReason = PriceNotFoundReasons.BotDetected;
-            await scraperVisitRepository.UpdateVisit();
-
             ApplicationLog botDetectedLog = await ApplicationLogBusiness.CreateErrorLogFromExceptionAsync("AmazonBotDetectedException is occured in AmazonFlurlHttpClient.CrawlAsync method",
                 Options?.LoggingJar?.JobName ?? "AmazonFlurlHttpClient.CrawlAsync",
                 Options?.LoggingJar?.JobId ?? GetRequestId(),
-                null,
+                transactionId,
                 botDetectedEx,
                 start,
                 DateTime.Now,
                 product.AmazonUrl,
                 GetRequestId(),
-                product.Id,
-                visitId: scraperVisit.Id);
+                product.Id);
 
             if (Options is not null && Options.LoggingJar is not null)
             {
-                await Options.LoggingJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(botDetectedLog), force: true);
+                await Options.LoggingJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(botDetectedLog));
             }
 
             HttpStatusCode? statusCode = botDetectedLog.StatusCode.HasValue ? (HttpStatusCode)botDetectedLog.StatusCode : null;
             string? statusText = statusCode?.ToString() ?? null;
-            return new HttpClientResponse(statusCode, statusText, null, GetRequestId(), null, null, null, scraperVisit.Id);
+            return new HttpClientResponse(statusCode, statusText, null, GetRequestId(), null, null, null, true);
         }
         catch (FlurlHttpTimeoutException timeoutEx)
         {
-            scraperVisit.AmazonPriceNotFoundReason = PriceNotFoundReasons.ExceptionOccured;
-            await scraperVisitRepository.AddVisitsAsync(new ScraperVisit[] { scraperVisit });
-
             ApplicationLog timeoutErrorLog = await ApplicationLogBusiness.CreateErrorLogFromExceptionAsync("FlurlHttpTimeoutException is occured in AmazonFlurlHttpClient.CrawlAsync method",
                 Options?.LoggingJar?.JobName ?? "AmazonFlurlHttpClient.CrawlAsync",
                 Options?.LoggingJar?.JobId ?? GetRequestId(),
-                null,
+                transactionId,
                 timeoutEx,
                 start,
                 DateTime.Now,
                 product.AmazonUrl,
                 GetRequestId(),
                 product.Id,
-                visitId: scraperVisit.Id,
                 statusCode: timeoutEx.StatusCode);
 
             if (Options is not null && Options.LoggingJar is not null)
             {
-                await Options.LoggingJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(timeoutErrorLog), force: true);
+                await Options.LoggingJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(timeoutErrorLog));
             }
 
             HttpStatusCode? statusCode = timeoutErrorLog.StatusCode.HasValue ? (HttpStatusCode)timeoutErrorLog.StatusCode : null;
             string? statusText = statusCode?.ToString() ?? null;
             /*Most propably response headers will be null due to this is a timeout ex*/
-            return new HttpClientResponse(statusCode, statusText, null, GetRequestId(), timeoutEx.Call?.Response?.GetHeadersAsDictionary(false), timeoutEx.Call?.Response?.GetHeadersAsDictionary(true), null, scraperVisit.Id);
+            return new HttpClientResponse(statusCode, statusText, null, GetRequestId(), timeoutEx.Call?.Response?.GetHeadersAsDictionary(false), timeoutEx.Call?.Response?.GetHeadersAsDictionary(true), null);
         }
         catch (FlurlHttpException httpEx)
         {
-            scraperVisit.AmazonPriceNotFoundReason = PriceNotFoundReasons.ExceptionOccured;
-            await scraperVisitRepository.AddVisitsAsync(new ScraperVisit[] { scraperVisit });
-
             ApplicationLog httpErrorLog = await ApplicationLogBusiness.CreateErrorLogFromExceptionAsync("FlurlHttpException is occured in in AmazonFlurlHttpClient.CrawlAsync method",
                 Options?.LoggingJar?.JobName ?? "AmazonFlurlHttpClient.CrawlAsync",
                 Options?.LoggingJar?.JobId ?? GetRequestId(),
-                null,
+                transactionId,
                 httpEx,
                 start,
                 DateTime.Now,
                 product.AmazonUrl,
                 GetRequestId(),
                 product.Id,
-                visitId: scraperVisit.Id,
                 statusCode: httpEx.StatusCode);
 
             if (Options is not null && Options.LoggingJar is not null)
@@ -205,24 +188,20 @@ public sealed class AmazonFlurlHttpClient : CrawlerHttpClientBase, IDisposable
             HttpStatusCode? statusCode = httpErrorLog.StatusCode.HasValue ? (HttpStatusCode)httpErrorLog.StatusCode : null;
             string? statusText = statusCode?.ToString() ?? null;
 
-            return new HttpClientResponse(statusCode, statusText, httpErrorLog.ResponseHtml, GetRequestId(), httpEx.Call?.Response?.GetHeadersAsDictionary(false), httpEx.Call?.Response?.GetHeadersAsDictionary(true), null, scraperVisit.Id);
+            return new HttpClientResponse(statusCode, statusText, httpErrorLog.ResponseHtml, GetRequestId(), httpEx.Call?.Response?.GetHeadersAsDictionary(false), httpEx.Call?.Response?.GetHeadersAsDictionary(true), null);
         }
         catch (Exception ex)
         {
-            scraperVisit.AmazonPriceNotFoundReason = PriceNotFoundReasons.ExceptionOccured;
-            await scraperVisitRepository.AddVisitsAsync(new ScraperVisit[] { scraperVisit });
-
             ApplicationLog genericErrorApplicationLog = await ApplicationLogBusiness.CreateErrorLogFromExceptionAsync("Unknow exception is occured in in AmazonFlurlHttpClient.CrawlAsync method",
-                Options.LoggingJar?.JobName ?? "AmazonFlurlHttpClient.CrawlAsync",
-                Options.LoggingJar?.JobId ?? GetRequestId(),
+                Options?.LoggingJar?.JobName ?? "AmazonFlurlHttpClient.CrawlAsync",
+                Options?.LoggingJar?.JobId ?? GetRequestId(),
                 null,
                 ex,
                 start,
                 DateTime.Now,
                 product.AmazonUrl,
                 GetRequestId(),
-                product.Id,
-                visitId: scraperVisit.Id);
+                product.Id);
 
             if (Options is not null && Options.LoggingJar is not null)
             {
@@ -232,7 +211,7 @@ public sealed class AmazonFlurlHttpClient : CrawlerHttpClientBase, IDisposable
             HttpStatusCode? statusCode = genericErrorApplicationLog.StatusCode.HasValue ? (HttpStatusCode)genericErrorApplicationLog.StatusCode : null;
             string? statusText = statusCode?.ToString() ?? null;
 
-            return new HttpClientResponse(statusCode, statusText, genericErrorApplicationLog.ResponseHtml, GetRequestId(), null, null, null, scraperVisit.Id);
+            return new HttpClientResponse(statusCode, statusText, genericErrorApplicationLog.ResponseHtml, GetRequestId(), null, null, null);
         }
     }
 
@@ -259,7 +238,7 @@ public sealed class AmazonFlurlHttpClient : CrawlerHttpClientBase, IDisposable
 
     private async Task AddLogAsync(ApplicationLog log)
     {
-        await new ApplicationLogBusiness(new ApplicationLogRepository(_dbContext)).AddErrorAsync(log);
+        await new ApplicationLogBusiness(new ApplicationLogRepository(_logDbContext)).AddErrorAsync(log);
     }
 
     private void Dispose(bool disposing)

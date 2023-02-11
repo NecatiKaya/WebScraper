@@ -19,21 +19,24 @@ public class PuppeterHttpClient : CrawlerHttpClientBase
 
         using (BrowserFetcher browserFetcher = new BrowserFetcher(browserFetcherOptions))
         {
-            if (!await browserFetcher.CanDownloadAsync(BrowserFetcher.DefaultChromiumRevision))
+            if (string.IsNullOrWhiteSpace(browserFetcher.GetExecutablePath(BrowserFetcher.DefaultChromiumRevision)))
             {
-                throw new PuppeteerDownloadException();
-            }
+                if (!await browserFetcher.CanDownloadAsync(BrowserFetcher.DefaultChromiumRevision))
+                {
+                    throw new PuppeteerDownloadException();
+                }
 
-            try
-            {
-                await browserFetcher.DownloadAsync(BrowserFetcher.DefaultChromiumRevision);
-            }
-            catch (Exception ex)
-            {
-                throw new PuppeteerDownloadException(ex);
-            }
+                try
+                {
+                    await browserFetcher.DownloadAsync(BrowserFetcher.DefaultChromiumRevision);
+                }
+                catch (Exception ex)
+                {
+                    throw new PuppeteerDownloadException(ex);
+                }
 
-            ExecutablePath = browserFetcher.GetExecutablePath(BrowserFetcher.DefaultChromiumRevision);
+                ExecutablePath = browserFetcher.GetExecutablePath(BrowserFetcher.DefaultChromiumRevision);
+            }            
         }
 
         if (string.IsNullOrEmpty(ExecutablePath))
@@ -93,7 +96,7 @@ public class PuppeterHttpClient : CrawlerHttpClientBase
                         GetRequestId(),
                         response.Request.Headers,
                         response.Headers,
-                        cookies, -1);
+                        cookies);
                     return clientResponse;
                 }
             }

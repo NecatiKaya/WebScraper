@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using WebScraper.Api.V2.Data.Dto;
 using WebScraper.Api.V2.Data.Dto.ScraperVisit;
 using WebScraper.Api.V2.Data.Models;
 using WebScraper.Api.V2.Extenisons;
@@ -37,14 +36,14 @@ public class ScraperVisitRepository : RepositoryBase
                                                         join product in _dbContext.Products.AsNoTracking() on visit.ProductId equals product.Id
                                                         where
                                                             (visit.ProductId == productId || productId == null) &&
-                                                            (visit.VisitDate.Date >= _startDate || _startDate == null) &&
-                                                            (visit.VisitDate.Date <= _endDate || _endDate == null)
+                                                            (visit.StartDate.Date >= _startDate || _startDate == null) &&
+                                                            (visit.StartDate.Date <= _endDate || _endDate == null)
                                                         select new GetScraperVisitDto
                                                         {
                                                             VisitId = visit.Id,
                                                             ProductId = visit.ProductId,
                                                             ProductName = product.Name,
-                                                            VisitDate = visit.VisitDate,
+                                                            VisitDate = visit.StartDate,
                                                             AmazonPreviousPrice = visit.AmazonPreviousPrice,
                                                             AmazonCurrentPrice = visit.AmazonCurrentPrice,
                                                             AmazonCurrentDiscountAsAmount = visit.AmazonCurrentDiscountAsAmount,
@@ -120,5 +119,34 @@ public class ScraperVisitRepository : RepositoryBase
     public async Task<ScraperVisit?> GetVisitById(int visitId)
     {
         return await _dbContext.ScraperVisits.FirstOrDefaultAsync(x => x.Id == visitId);
+    }
+
+    public async Task<List<NotNotifiedVisitDto>> GetNotNotifiedVisits()
+    {
+        List<NotNotifiedVisitDto> notNotifiedVisits = await (from visit in _dbContext.ScraperVisits.AsNoTracking()
+                                                             join product in _dbContext.Products.AsNoTracking() on visit.ProductId equals product.Id
+                                                             where visit.NeedToNotify && !visit.Notified
+                                                             select new NotNotifiedVisitDto()
+                                                             {
+                                                                 AmazonCurrentDiscountAsAmount = visit.AmazonCurrentDiscountAsAmount,
+                                                                 AmazonCurrentDiscountAsPercentage = visit.AmazonCurrentDiscountAsPercentage,
+                                                                 AmazonCurrentPrice = visit.AmazonCurrentPrice,
+                                                                 AmazonPreviousPrice = visit.AmazonPreviousPrice,
+                                                                 CalculatedPriceDifferenceAsAmount = visit.CalculatedPriceDifferenceAsAmount,
+                                                                 CalculatedPriceDifferenceAsPercentage = visit.CalculatedPriceDifferenceAsPercentage,
+                                                                 EndDate = visit.EndDate,
+                                                                 Id = visit.Id,
+                                                                 ProductId = product.Id,
+                                                                 ProductName = product.Name,
+                                                                 RequestedPriceDifferenceAsAmount = visit.RequestedPriceDifferenceAsAmount,
+                                                                 RequestedPriceDifferenceAsPercentage = visit.RequestedPriceDifferenceAsPercentage,
+                                                                 StartDate = visit.StartDate,
+                                                                 TrendyolCurrentDiscountAsAmount = visit.TrendyolCurrentDiscountAsAmount,
+                                                                 TrendyolCurrentDiscountAsPercentage = visit.TrendyolCurrentDiscountAsPercentage,
+                                                                 TrendyolCurrentPrice = visit.TrendyolCurrentPrice,
+                                                                 TrendyolPreviousPrice = visit.TrendyolPreviousPrice
+                                                             }).ToListAsync();
+
+        return notNotifiedVisits;
     }
 }

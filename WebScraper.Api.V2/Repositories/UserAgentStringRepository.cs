@@ -3,9 +3,9 @@ using WebScraper.Api.V2.Data.Models;
 
 namespace WebScraper.Api.V2.Repositories;
 
-public class UserAgentStringRepository : RepositoryBase
+public class UserAgentStringRepository : LogDbRepositoryBase
 {
-    public UserAgentStringRepository(WebScraperDbContext context) : base(context)
+    public UserAgentStringRepository(WebScraperLogDbContext context) : base(context)
     {
 
     }

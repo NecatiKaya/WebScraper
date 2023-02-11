@@ -3,6 +3,7 @@ using Flurl.Http.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Quartz;
 using System.Net;
+using WebScraper.Api.V2.Business;
 using WebScraper.Api.V2.Business.Email;
 using WebScraper.Api.V2.Data.Models;
 using WebScraper.Api.V2.Jobs;
@@ -14,11 +15,18 @@ if (string.IsNullOrWhiteSpace(connectionString))
     throw new ArgumentNullException(nameof(connectionString));
 }
 
+string? logDbConnectionString = builder.Configuration.GetConnectionString("logDb");
+if (string.IsNullOrWhiteSpace(logDbConnectionString))
+{
+    throw new ArgumentNullException(nameof(logDbConnectionString));
+}
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<WebScraperDbContext>(options => options.UseSqlServer(connectionString));
+builder.Services.AddDbContext<WebScraperLogDbContext>(options => options.UseSqlServer(logDbConnectionString));
 builder.Services.AddCors((corsOptions) =>
 {
     corsOptions.AddPolicy(name: "_allowedHosts",
@@ -35,7 +43,10 @@ if (emailConfig is not null)
 {
     builder.Services.AddSingleton(emailConfig);
 }
+
 builder.Services.AddScoped<IMailSender, MailSender>();
+
+builder.Services.AddScoped<AlertingBusiness, AlertingBusiness>();
 
 builder.Services.AddSingleton<IFlurlClientFactory, PerBaseUrlFlurlClientFactory>();
 

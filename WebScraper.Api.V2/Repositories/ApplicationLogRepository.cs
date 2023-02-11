@@ -2,9 +2,9 @@
 
 namespace WebScraper.Api.V2.Repositories;
 
-public class ApplicationLogRepository : RepositoryBase
+public class ApplicationLogRepository : LogDbRepositoryBase
 {
-    public ApplicationLogRepository(WebScraperDbContext context) : base(context)
+    public ApplicationLogRepository(WebScraperLogDbContext context) : base(context)
     {
 
     }

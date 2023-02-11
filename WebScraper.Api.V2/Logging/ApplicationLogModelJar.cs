@@ -16,11 +16,11 @@ public class ApplicationLogModelJar
 
     public event ApplicationLogModelHandler? LogAdded;
 
-    protected WebScraperDbContext _dbContext { get; set; }
+    protected WebScraperLogDbContext _dbContext { get; set; }
 
     protected ILogger ConsoleLogger { get; set; }
 
-    public ApplicationLogModelJar(WebScraperDbContext context, ILogger consoleLogger)
+    public ApplicationLogModelJar(WebScraperLogDbContext context, ILogger consoleLogger)
     {
         _dbContext = context;
         ConsoleLogger = consoleLogger;
@@ -60,12 +60,18 @@ public class ApplicationLogModelJar
 
     public async Task SaveAppLogsIfNeededAsync(bool force = false)
     {
-        if (_applicationLogModels?.Count >= 50 || (force && _applicationLogModels!.Any()))
-        {
-            await _dbContext.ApplicationLogs.AddRangeAsync(_applicationLogModels!.Select(x => x.AppLog));
-            await _dbContext.SaveChangesAsync();
 
-            Clear();
-        }
+        await _dbContext.ApplicationLogs.AddRangeAsync(_applicationLogModels!.Select(x => x.AppLog));
+        await _dbContext.SaveChangesAsync();
+
+        Clear();
+
+        //if (_applicationLogModels?.Count >= 5 || (force && _applicationLogModels!.Any()))
+        //{
+        //    await _dbContext.ApplicationLogs.AddRangeAsync(_applicationLogModels!.Select(x => x.AppLog));
+        //    await _dbContext.SaveChangesAsync();
+
+        //    Clear();
+        //}
     }
 }

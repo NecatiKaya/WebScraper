@@ -16,6 +16,8 @@ public class TrendyolFlurlHttpClient : CrawlerHttpClientBase, IDisposable
 
     private readonly WebScraperDbContext _dbContext;
 
+    private readonly WebScraperLogDbContext _logDbContext;
+
     private UserAgentStringRepository? userAgentRepository;
 
     private CookieStoreRepository? cookieStoreRepository;
@@ -26,17 +28,18 @@ public class TrendyolFlurlHttpClient : CrawlerHttpClientBase, IDisposable
 
     private bool disposedValue;
 
-    public TrendyolFlurlHttpClient(IFlurlClientFactory flurlClientFac, ClientConfiguration clientConfiguration, WebScraperDbContext context) : base(clientConfiguration)
+    public TrendyolFlurlHttpClient(IFlurlClientFactory flurlClientFac, ClientConfiguration clientConfiguration, WebScraperDbContext context, WebScraperLogDbContext logDbContext) : base(clientConfiguration)
     {
         _flurlClientFac = flurlClientFac;
         _dbContext = context;
+        _logDbContext = logDbContext;
     }
 
     public override void Configure()
     {
         _flurlClient = _flurlClientFac.Get("https://www.trendyol.com/");
-        userAgentRepository = new UserAgentStringRepository(_dbContext);
-        cookieStoreRepository = new CookieStoreRepository(_dbContext);
+        userAgentRepository = new UserAgentStringRepository(_logDbContext);
+        cookieStoreRepository = new CookieStoreRepository(_logDbContext);
         isConfigured = true;
     }
 
@@ -68,16 +71,7 @@ public class TrendyolFlurlHttpClient : CrawlerHttpClientBase, IDisposable
         }
 
         DateTime start = DateTime.Now;
-        ScraperVisitRepository scraperVisitRepository = new ScraperVisitRepository(_dbContext);
-
-        ScraperVisit scraperVisit = new ScraperVisit()
-        {
-            NeedToNotify = false,
-            Notified = false,
-            ProductId = product.Id,
-            VisitDate = start
-        };
-
+        
         try
         {
             IFlurlRequest req = new FlurlRequest(product.TrendyolUrl);
@@ -85,8 +79,6 @@ public class TrendyolFlurlHttpClient : CrawlerHttpClientBase, IDisposable
             IFlurlResponse response = await req.GetAsync(cancellationToken, HttpCompletionOption.ResponseContentRead);
             response.ResponseMessage.EnsureSuccessStatusCode();
             string html = await response.GetStringAsync();
-
-            await scraperVisitRepository.AddVisitsAsync(new ScraperVisit[] { scraperVisit });
 
             HttpClientCookie[]? cookies = GetCookies(response);
             HttpStatusCode statusCode = (HttpStatusCode)response.StatusCode;
@@ -96,70 +88,63 @@ public class TrendyolFlurlHttpClient : CrawlerHttpClientBase, IDisposable
             ///TODO: transactionid parametresi güncellenmeli
             ApplicationLog applicationLog = ApplicationLogBusiness.CreateInformationLog($"Product ('{product.Id} - {product.Name}') has been crawled.", jobName, jobId, transactionId, start, DateTime.Now - start, product.TrendyolUrl, product.Id, GetRequestId(), html, JsonSerializer.Serialize(requestHeaders), JsonSerializer.Serialize(responseHeaders), null, response.StatusCode);
 
-            HttpClientResponse clientResponse = new HttpClientResponse(statusCode, statusCode.ToString(), html, GetRequestId(), requestHeaders, responseHeaders, cookies, scraperVisit.Id);
+            HttpClientResponse clientResponse = new HttpClientResponse(statusCode, statusCode.ToString(), html, GetRequestId(), requestHeaders, responseHeaders, cookies);
             return clientResponse;
         }
         catch (FlurlHttpTimeoutException timeoutEx)
         {
-            scraperVisit.TrendyolPriceNotFoundReason = PriceNotFoundReasons.ExceptionOccured;
             ApplicationLog timeoutErrorLog = await ApplicationLogBusiness.CreateErrorLogFromExceptionAsync("FlurlHttpTimeoutException is occured in TrendyolFlurlHttpClient.CrawlAsync method",
                 Options?.LoggingJar?.JobName ?? "TrendyolFlurlHttpClient.CrawlAsync",
                 Options?.LoggingJar?.JobId ?? GetRequestId(),
-                null,
+                transactionId,
                 timeoutEx,
                 start,
                 DateTime.Now,
                 product.TrendyolUrl,
                 GetRequestId(),
-                product.Id);
+                product.Id,
+                statusCode: timeoutEx.StatusCode);
 
             if (Options is not null && Options.LoggingJar is not null)
             {
                 await Options.LoggingJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(timeoutErrorLog));
             }
 
-            await scraperVisitRepository.AddVisitsAsync(new ScraperVisit[] { scraperVisit });
-
             HttpStatusCode? statusCode = timeoutErrorLog.StatusCode.HasValue ? (HttpStatusCode)timeoutErrorLog.StatusCode : null;
             string? statusText = statusCode?.ToString() ?? null;
             /*Most propably response headers will be null due to this is a timeout ex*/
-            return new HttpClientResponse(statusCode, statusText, null, GetRequestId(), timeoutEx.Call?.Response?.GetHeadersAsDictionary(false), timeoutEx.Call?.Response?.GetHeadersAsDictionary(true), null, scraperVisit.Id);
+            return new HttpClientResponse(statusCode, statusText, null, GetRequestId(), timeoutEx.Call?.Response?.GetHeadersAsDictionary(false), timeoutEx.Call?.Response?.GetHeadersAsDictionary(true), null);
         }
         catch (FlurlHttpException httpEx)
         {
-            scraperVisit.TrendyolPriceNotFoundReason = PriceNotFoundReasons.ExceptionOccured;
             ApplicationLog httpErrorLog = await ApplicationLogBusiness.CreateErrorLogFromExceptionAsync("FlurlHttpException is occured in in TrendyolFlurlHttpClient.CrawlAsync method",
                 Options?.LoggingJar?.JobName ?? "TrendyolFlurlHttpClient.CrawlAsync",
                 Options?.LoggingJar?.JobId ?? GetRequestId(),
-                null,
+                transactionId,
                 httpEx,
                 start,
                 DateTime.Now,
                 product.TrendyolUrl,
                 GetRequestId(),
-                product.Id);
+                product.Id,
+                statusCode: httpEx.StatusCode);
 
             if (Options is not null && Options.LoggingJar is not null)
             {
                 await Options.LoggingJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(httpErrorLog));
             }
 
-            await scraperVisitRepository.AddVisitsAsync(new ScraperVisit[] { scraperVisit });
-
             HttpStatusCode? statusCode = httpErrorLog.StatusCode.HasValue ? (HttpStatusCode)httpErrorLog.StatusCode : null;
             string? statusText = statusCode?.ToString() ?? null;
 
-            return new HttpClientResponse(statusCode, statusText, httpErrorLog.ResponseHtml, GetRequestId(), httpEx.Call?.Response?.GetHeadersAsDictionary(false), httpEx.Call?.Response?.GetHeadersAsDictionary(true), null, scraperVisit.Id);
+            return new HttpClientResponse(statusCode, statusText, httpErrorLog.ResponseHtml, GetRequestId(), httpEx.Call?.Response?.GetHeadersAsDictionary(false), httpEx.Call?.Response?.GetHeadersAsDictionary(true), null);
         }
         catch (Exception ex)
         {
-            scraperVisit.TrendyolPriceNotFoundReason = PriceNotFoundReasons.ExceptionOccured;
-            await scraperVisitRepository.AddVisitsAsync(new ScraperVisit[] { scraperVisit });
-
             ApplicationLog genericErrorApplicationLog = await ApplicationLogBusiness.CreateErrorLogFromExceptionAsync("Unknow exception is occured in in TrendyolFlurlHttpClient.CrawlAsync method",
                 Options?.LoggingJar?.JobName ?? "TrendyolFlurlHttpClient.CrawlAsync",
                 Options?.LoggingJar?.JobId ?? GetRequestId(),
-                null,
+                transactionId,
                 ex,
                 start,
                 DateTime.Now,
@@ -175,7 +160,7 @@ public class TrendyolFlurlHttpClient : CrawlerHttpClientBase, IDisposable
             HttpStatusCode? statusCode = genericErrorApplicationLog.StatusCode.HasValue ? (HttpStatusCode)genericErrorApplicationLog.StatusCode : null;
             string? statusText = statusCode?.ToString() ?? null;
 
-            return new HttpClientResponse(statusCode, statusText, genericErrorApplicationLog.ResponseHtml, GetRequestId(), null, null, null, scraperVisit.Id);
+            return new HttpClientResponse(statusCode, statusText, genericErrorApplicationLog.ResponseHtml, GetRequestId(), null, null, null);
         }
     }
 

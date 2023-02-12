@@ -4,6 +4,8 @@ public class ScraperVisit
 {
     public int Id { get; set; }
 
+    public string? JobId { get; set; }
+
     public int ProductId { get; set; }
 
     public DateTime StartDate { get; set; }

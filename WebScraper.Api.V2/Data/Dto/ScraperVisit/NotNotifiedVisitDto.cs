@@ -6,6 +6,8 @@ public class NotNotifiedVisitDto
 {
     public int Id { get; set; }
 
+    public string? JobId { get; set; }
+
     public int ProductId { get; set; }
 
     public string? ProductName { get; set; }

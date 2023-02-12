@@ -6,6 +6,8 @@ public class GetScraperVisitDto
 {
     public int VisitId { get; set; }
 
+    public string? JobId { get; set; }
+
     public int ProductId { get; set; }
 
     public string? ProductName { get; set; }
@@ -45,6 +47,7 @@ public class GetScraperVisitDto
     public string? UsedCookieValue { get; set; }
 
     public string? UsedUserAgentValue { get; set; }
+
     public PriceNotFoundReasons? AmazonPriceNotFoundReason { get; set; }
 
     public PriceNotFoundReasons? TrendyolPriceNotFoundReason { get; set; }

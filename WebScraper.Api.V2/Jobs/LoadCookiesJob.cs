@@ -49,7 +49,7 @@ public class LoadCookiesJob : IJob, IDisposable
             if (response.HasSuccessFullStatusCode() && response.Value.Cookies is not null)
             {
                 CookieStoreRepository repository = new CookieStoreRepository(logDb);
-                CookieStore[] cookies = response.Value.Cookies.Select(cookie => new CookieStore(cookie.Value)).ToArray();
+                CookieStore[] cookies = response.Value.Cookies.Select(cookie => new CookieStore(cookie.Name, cookie.Value)).ToArray();
                 await repository.SaveCookiesAsync(cookies);
                 await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(ApplicationLogBusiness.CreateInformationLog($"LoadCookiesJob cookies saved.", jobName, jobId, transactionId, start)));
             }

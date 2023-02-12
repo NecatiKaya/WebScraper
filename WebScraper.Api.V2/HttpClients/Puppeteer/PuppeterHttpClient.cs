@@ -19,7 +19,8 @@ public class PuppeterHttpClient : CrawlerHttpClientBase
 
         using (BrowserFetcher browserFetcher = new BrowserFetcher(browserFetcherOptions))
         {
-            if (string.IsNullOrWhiteSpace(browserFetcher.GetExecutablePath(BrowserFetcher.DefaultChromiumRevision)))
+            ExecutablePath = browserFetcher.GetExecutablePath(BrowserFetcher.DefaultChromiumRevision);
+            if (string.IsNullOrWhiteSpace(ExecutablePath))
             {
                 if (!await browserFetcher.CanDownloadAsync(BrowserFetcher.DefaultChromiumRevision))
                 {
@@ -74,6 +75,7 @@ public class PuppeterHttpClient : CrawlerHttpClientBase
 
                 if (response != null)
                 {
+                    //imgTagWrapperId
                     HttpClientCookie[]? cookies = (await page.GetCookiesAsync(product.AmazonUrl))
                         .Where(cookie => cookie.Domain.Contains("amazon.com.tr"))
                         .Select(cookie => new HttpClientCookie()

@@ -62,7 +62,8 @@ public class ScraperVisitRepository : RepositoryBase
                                                             AmazonPriceNotFoundReason = visit.AmazonPriceNotFoundReason,
                                                             TrendyolPriceNotFoundReason = visit.TrendyolPriceNotFoundReason,
                                                             UsedCookieValue = visit.UsedCookieValue,
-                                                            UsedUserAgentValue = visit.UsedUserAgentValue
+                                                            UsedUserAgentValue = visit.UsedUserAgentValue,
+                                                            JobId = visit.JobId,
                                                         });
 
         if (sortKey == "visitDate")
@@ -144,7 +145,8 @@ public class ScraperVisitRepository : RepositoryBase
                                                                  TrendyolCurrentDiscountAsAmount = visit.TrendyolCurrentDiscountAsAmount,
                                                                  TrendyolCurrentDiscountAsPercentage = visit.TrendyolCurrentDiscountAsPercentage,
                                                                  TrendyolCurrentPrice = visit.TrendyolCurrentPrice,
-                                                                 TrendyolPreviousPrice = visit.TrendyolPreviousPrice
+                                                                 TrendyolPreviousPrice = visit.TrendyolPreviousPrice,
+                                                                 JobId = visit.JobId
                                                              }).ToListAsync();
 
         return notNotifiedVisits;

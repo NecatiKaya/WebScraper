@@ -2,14 +2,17 @@
 
 public class CookieStore
 {
-    public CookieStore(string cookieValue)
+    public CookieStore(string cookieName, string cookieValue)
     {
         CookieValue = cookieValue;
+        CookieName = cookieName;
     }
 
     public int Id { get; set; }
 
     public string CookieValue { get; set; }
+
+    public string CookieName { get; set; }
 
     public bool IsUsed { get; set; } = false;
 

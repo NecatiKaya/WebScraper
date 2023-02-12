@@ -7,6 +7,8 @@ public class AddScraperVisitDto
 {
     public int ProductId { get; set; }
 
+    public string? JobId { get; set; }
+
     public DateTime StartDate { get; set; }
 
     public DateTime? EndDate { get; set; }
@@ -62,7 +64,8 @@ public class AddScraperVisitDto
             TrendyolPriceNotFoundReason = TrendyolPriceNotFoundReason ?? PriceNotFoundReasons.Initial,
             LogId = LogId,
             UsedCookieValue = UsedCookieValue,
-            UsedUserAgentValue = UsedUserAgentValue
+            UsedUserAgentValue = UsedUserAgentValue,
+            JobId = JobId,
         };
         return visit;
     }

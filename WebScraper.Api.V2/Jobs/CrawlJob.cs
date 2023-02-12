@@ -1,10 +1,6 @@
 ﻿using Flurl.Http.Configuration;
-using Microsoft.EntityFrameworkCore;
 using Quartz;
-using System.Text;
-using System.Threading;
 using WebScraper.Api.V2.Business;
-using WebScraper.Api.V2.Business.Email;
 using WebScraper.Api.V2.Data.Models;
 using WebScraper.Api.V2.HttpClients;
 using WebScraper.Api.V2.Logging;

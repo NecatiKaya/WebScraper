@@ -1,11 +1,7 @@
-﻿using Flurl.Http;
-using Flurl.Http.Configuration;
-using Microsoft.Extensions.Options;
-using System.Net;
+﻿using Flurl.Http.Configuration;
 using WebScraper.Api.V2.Business.Parsing;
 using WebScraper.Api.V2.Data.Dto;
 using WebScraper.Api.V2.Data.Models;
-using WebScraper.Api.V2.Exceptions;
 using WebScraper.Api.V2.HttpClients;
 using WebScraper.Api.V2.HttpClients.Flurl;
 using WebScraper.Api.V2.Logging;
@@ -50,7 +46,8 @@ public class Crawler
             NeedToNotify = false,
             Notified = false,
             ProductId = product.Id,
-            StartDate = DateTime.Now
+            StartDate = DateTime.Now,
+            JobId = logModelJar?.JobId
         };
 
         try

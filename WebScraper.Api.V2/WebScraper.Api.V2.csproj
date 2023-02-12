@@ -26,6 +26,8 @@
   <ItemGroup>
     <Folder Include="Constants\" />
     <Folder Include="Controllers\" />
+    <Folder Include="UI-Project\src\%40scraper\modules\reports\" />
+    <Folder Include="UI-Project\src\%40scraper\modules\scraping\components\directives\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -35,6 +37,7 @@
     <None Update="Assets\EmailTemplates\PriceItemTemplate.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <Content Remove="UI-Project\**\*" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,100 @@
+<div class="w-full">
+    <div class="example-loading-shade" *ngIf="isLoadingResults">
+        <mat-spinner *ngIf="isLoadingResults"></mat-spinner>
+    </div>
+
+    <div>
+        <table mat-table [dataSource]="data" class="mat-elevation-z8" matSort matSortActive="visitDate"
+            matSortDisableClear matSortDirection="desc">
+
+            <ng-container matColumnDef="visitDate" style="width: 150px;">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Visit Date</th>
+                <td mat-cell *matCellDef="let row">{{row.visitDate | date: 'dd/MM/yyyy HH:mm'}}</td>
+            </ng-container>
+            <ng-container matColumnDef="productName">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Product</th>
+                <td mat-cell *matCellDef="let row" [matTooltip]="row.productName">{{makeShorter(row.productName, 20)}}
+                </td>
+            </ng-container>
+            <ng-container matColumnDef="trendyolPreviousPrice">
+                <th mat-header-cell *matHeaderCellDef>Trendyol Prev. Price</th>
+                <td mat-cell *matCellDef="let row" matBadge="8" matBadgePosition="before" matBadgeColor="accent">
+                    {{row.trendyolPreviousPrice ?? "-"}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="trendyolCurrentPrice">
+                <th mat-header-cell *matHeaderCellDef>Trendyol Curr. Price</th>
+                <td mat-cell *matCellDef="let row">{{row.trendyolCurrentPrice ?? "-"}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="trendyolCurrentDiscountAsAmount">
+                <th mat-header-cell *matHeaderCellDef>Trendyol Curr. Disc. Amt.</th>
+                <td mat-cell *matCellDef="let row">{{row.trendyolCurrentDiscountAsAmount ?? "-"}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="trendyolCurrentDiscountAsPercentage">
+                <th mat-header-cell *matHeaderCellDef>Trendyol Curr. Disc. %.</th>
+                <td mat-cell *matCellDef="let row">{{row.trendyolCurrentDiscountAsPercentage ?? "-"}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="amazonPreviousPrice">
+                <th mat-header-cell *matHeaderCellDef>Amazon Prev. Price</th>
+                <td mat-cell *matCellDef="let row">{{row.amazonPreviousPrice ?? "-"}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="amazonCurrentPrice">
+                <th mat-header-cell *matHeaderCellDef>Amazon Curr. Price</th>
+                <td mat-cell *matCellDef="let row">{{row.amazonCurrentPrice ?? "-"}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="amazonCurrentDiscountAsAmount">
+                <th mat-header-cell *matHeaderCellDef>Amazon Curr. Disc. Amt.</th>
+                <td mat-cell *matCellDef="let row">{{row.amazonCurrentDiscountAsAmount ?? "-"}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="amazonCurrentDiscountAsPercentage">
+                <th mat-header-cell *matHeaderCellDef>Amazon Curr. Disc. %.</th>
+                <td mat-cell *matCellDef="let row">{{row.amazonCurrentDiscountAsPercentage ?? "-"}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="requestedPriceDifferenceAsPercentage">
+                <th mat-header-cell *matHeaderCellDef>Req. Disc. %.</th>
+                <td mat-cell *matCellDef="let row">{{row.requestedPriceDifferenceAsPercentage ?? "-"}}</td>
+            </ng-container>
+            <ng-container matColumnDef="requestedPriceDifferenceAsAmount">
+                <th mat-header-cell *matHeaderCellDef>Req. Disc. Amt.</th>
+                <td mat-cell *matCellDef="let row">{{row.requestedPriceDifferenceAsAmount ?? "-"}}</td>
+            </ng-container>
+            <ng-container matColumnDef="calculatedPriceDifferenceAsPercentage">
+                <th mat-header-cell *matHeaderCellDef>Curr. Disc. %.</th>
+                <td mat-cell *matCellDef="let row">{{row.calculatedPriceDifferenceAsPercentage ?? "-"}}</td>
+            </ng-container>
+            <ng-container matColumnDef="calculatedPriceDifferenceAsAmount">
+                <th mat-header-cell *matHeaderCellDef>Curr. Disc. Amt.</th>
+                <td mat-cell *matCellDef="let row">{{row.calculatedPriceDifferenceAsAmount ?? "-"}}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="needToNotify">
+                <th mat-header-cell *matHeaderCellDef>Need To Notify</th>
+                <td mat-cell *matCellDef="let row">
+                    <div style="display: flex; align-items: center;">
+                        <div style="box-sizing: border-box;border-radius:0.5rem; background-color: #4caf501a;color: rgb(76 175 80);font-weight: 500;font-size: .75rem;">
+                            {{row.needToNotify}}
+                        </div>
+                    </div>
+                </td>
+            </ng-container>
+
+            <ng-container matColumnDef="notified">
+                <th mat-header-cell *matHeaderCellDef>Notified</th>
+                <td mat-cell *matCellDef="let row">{{row.notified ?? "-"}}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+    </div>
+
+    <mat-paginator [length]="resultsLength" [pageSizeOptions]="[50,100,200]" [showFirstLastButtons]="true">
+    </mat-paginator>
+</div>

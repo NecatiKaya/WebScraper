@@ -1,0 +1,86 @@
+<mat-dialog-content>
+    <mat-grid-list cols="1" rowHeight="80px">
+        <form novalidate [formGroup]="productForm">
+            <mat-grid-tile>
+                <mat-form-field appearance="outline" fxFlex="100" style="width: 100%">
+                    <mat-label>Product Id</mat-label>
+                    <input matInput type="text" placeholder="Please provide an id for product" readonly="readonly"
+                        formControlName="id" />
+                    <span style="color: red; font-size: 10px" *ngIf="idControl.touched && idControl.invalid">
+                        {{ getError(idControl) }}
+                    </span>
+                </mat-form-field>
+            </mat-grid-tile>
+            <mat-grid-tile>
+                <mat-form-field appearance="outline" fxFlex="100" style="width: 100%">
+                    <mat-label>Product Name</mat-label>
+                    <input matInput type="text" placeholder="Please provide a name for product"
+                        formControlName="name" />
+                    <span style="color: red; font-size: 10px" *ngIf="nameControl.touched && nameControl.invalid">
+                        {{ getError(nameControl) }}
+                    </span>
+                </mat-form-field>
+            </mat-grid-tile>
+            <mat-grid-tile>
+                <mat-form-field appearance="outline" fxFlex="100" style="width: 100%">
+                    <mat-label>Barcode</mat-label>
+                    <input matInput type="text" placeholder="Please provide an barcode number for product"
+                        formControlName="barcode" />
+                    <span style="color: red; font-size: 10px" *ngIf="barcodeControl.touched && barcodeControl.invalid">
+                        {{ getError(barcodeControl) }}
+                    </span>
+                </mat-form-field>
+            </mat-grid-tile>
+            <mat-grid-tile>
+                <mat-form-field appearance="outline" fxFlex="100" style="width: 100%">
+                    <mat-label>ASIN</mat-label>
+                    <input matInput type="text" placeholder="Please provide an asin name for product"
+                        formControlName="asin" />
+                    <span style="color: red; font-size: 10px" *ngIf="asinControl.touched && asinControl.invalid">
+                        {{ getError(asinControl) }}
+                    </span>
+                </mat-form-field>
+            </mat-grid-tile>
+            <mat-grid-tile>
+                <mat-form-field appearance="outline" fxFlex="100" style="width: 100%">
+                    <mat-label>Trendyol Url</mat-label>
+                    <input matInput type="text" placeholder="Please provide a trendyol url for product" formControlName="trendyolUrl" />
+                    <span style="color: red; font-size: 10px" *ngIf="trendyolUrlControl.touched && trendyolUrlControl.invalid">
+                        {{ getError(urlControl) }}
+                    </span>
+                </mat-form-field>
+            </mat-grid-tile>
+            <mat-grid-tile>
+                <mat-form-field appearance="outline" fxFlex="100" style="width: 100%">
+                    <mat-label>Amazon Url</mat-label>
+                    <input matInput type="text" placeholder="Please provide an amazon url for product" formControlName="amazonUrl" />
+                    <span style="color: red; font-size: 10px" *ngIf="amazonUrlControl.touched && amazonUrlControl.invalid">
+                        {{ getError(urlControl) }}
+                    </span>
+                </mat-form-field>
+            </mat-grid-tile>
+            <mat-grid-tile>
+                <mat-form-field appearance="outline" fxFlex="100" style="width: 100%">
+                    <mat-label>Price Diffrence as Amount</mat-label>
+                    <input matInput type="number" placeholder="Please provide trendyol-amazon price difference as amount" formControlName="requestedPriceDiffrenceWithAmount" />
+                    <span style="color: red; font-size: 10px" *ngIf="requestedPriceDiffrenceWithAmountControl.touched && requestedPriceDiffrenceWithAmountControl.invalid">
+                        {{ getError(urlControl) }}
+                    </span>
+                </mat-form-field>
+            </mat-grid-tile>
+            <mat-grid-tile>
+                <mat-form-field appearance="outline" fxFlex="100" style="width: 100%">
+                    <mat-label>Price Diffrence As Percentage</mat-label>
+                    <input matInput type="number" placeholder="Please provide trendyol-amazon price difference as percentage" formControlName="RequestedPriceDiffrenceWithPercentage" />
+                    <span style="color: red; font-size: 10px" *ngIf="requestedPriceDiffrenceWithPercentControl.touched && requestedPriceDiffrenceWithPercentControl.invalid">
+                        {{ getError(urlControl) }}
+                    </span>
+                </mat-form-field>
+            </mat-grid-tile>
+        </form>
+    </mat-grid-list>
+</mat-dialog-content>
+<div mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>No</button>
+    <button mat-button cdkFocusInitial (click)="onSaveClick()">Save</button>
+</div>

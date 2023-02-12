@@ -1,0 +1,16 @@
+<mat-dialog-content>
+    <form [formGroup]="form" novalidate>
+        <file-upload formControlName="selectedFile" [progress]="progress">
+        </file-upload>
+        <div class="invalid-feedback" style="display: block">
+            <ng-container *ngIf="selectedFile.touched && selectedFile.invalid">Please select a file</ng-container>
+        </div>
+    </form>
+</mat-dialog-content>
+ 
+<div mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Close</button>
+    <button mat-button cdkFocusInitial (click)="upload()" [disabled]="!form.valid">
+        Upload
+    </button>
+</div>

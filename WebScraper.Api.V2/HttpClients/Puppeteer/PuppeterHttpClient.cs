@@ -89,7 +89,7 @@ public class PuppeterHttpClient : CrawlerHttpClientBase
                             Secure = cookie.Secure,
                             Session = cookie.Session,
                             Size = cookie.Size,
-                            Url = cookie.Url,
+                            Url = cookie.Url
                         }).ToArray();
 
                     HttpClientResponse clientResponse = new HttpClientResponse(response.Status,

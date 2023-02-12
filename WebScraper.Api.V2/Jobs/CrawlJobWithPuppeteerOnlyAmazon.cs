@@ -8,15 +8,15 @@ using WebScraper.Api.V2.Repositories;
 
 namespace WebScraper.Api.V2.Jobs;
 
-public class LoadCookiesJob : IJob, IDisposable
+public class CrawlJobWithPuppeteerOnlyAmazon : IJob, IDisposable
 {
-    private readonly ILogger<LoadCookiesJob> _logger;
+    private readonly ILogger<CrawlJobWithPuppeteerOnlyAmazon> _logger;
 
     private readonly WebScraperDbContext _dbContext;
 
     private bool disposedValue;
 
-    public LoadCookiesJob(ILogger<LoadCookiesJob> logger, WebScraperDbContext dbContext)
+    public CrawlJobWithPuppeteerOnlyAmazon(ILogger<CrawlJobWithPuppeteerOnlyAmazon> logger, WebScraperDbContext dbContext)
     {
         _logger = logger;
         _dbContext = dbContext;
@@ -26,7 +26,7 @@ public class LoadCookiesJob : IJob, IDisposable
     {
         DateTime start = DateTime.Now;
         string jobId = Guid.NewGuid().ToString();
-        string jobName = nameof(LoadCookiesJob);
+        string jobName = nameof(CrawlJobWithPuppeteerOnlyAmazon);
         string transactionId = Guid.NewGuid().ToString();
 
         WebScraperLogDbContext logDb = new WebScraperLogDbContext();
@@ -35,44 +35,48 @@ public class LoadCookiesJob : IJob, IDisposable
         logJar.JobId = jobId;
         logJar.LogAdded += LogJar_LogAdded;
 
-        await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(ApplicationLogBusiness.CreateInformationLog($"LoadCookiesJob is started at '{start.ToString()}'.", jobName, jobId, transactionId, start)));
+        await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(ApplicationLogBusiness.CreateInformationLog($"CrawlJobWithPuppeteerOnlyAmazon is started at '{start.ToString()}'.", jobName, jobId, transactionId, start)));
 
         try
         {
+            List<HttpClientResponse> responses = new List<HttpClientResponse>();
+
+            ProductRepository productRepo = new ProductRepository(_dbContext);
+            RepositoryResponseBase<Product> productData = await productRepo.GetActiveProductsAsync();
+            Product[] data = productData.Data ?? Array.Empty<Product>();
+
             CrawlerHttpClientBase crawlerHttp = new PuppeterHttpClient(new ClientConfiguration()
             {
                 Logger = _logger,
                 LoggingJar = logJar
             });
             await crawlerHttp.ConfigureAsync();
-            HttpClientResponse? response = await crawlerHttp.CrawlAsync(new Product("AmazonHomePage", "barcode", "ASIN", "https://www.trendyol.com/", "https://www.amazon.com.tr/"));
-            if (response.HasSuccessFullStatusCode() && response.Value.Cookies is not null)
+
+            int batchSize = 50;
+            int numberOfBatches = (int)Math.Ceiling((double)data.Length / batchSize);
+
+            for (int i = 0; i < numberOfBatches; i++)
             {
-                CookieStoreRepository repository = new CookieStoreRepository(logDb);
-                CookieStore[] cookies = response.Value.Cookies.Select(cookie => new CookieStore(cookie.Name, cookie.Value) { WebSite = Websites.Amazon}).ToArray();
-                if (cookies != null && cookies.Any())
+                List<Product> productsPerTask = data.Skip(i * batchSize).Take(batchSize).ToList();
+                if (productsPerTask is null)
                 {
-                    string cookie = string.Join<CookieStore>(';', cookies);
-
-                    bool existsInDb = await repository.ExistsAsync(cookie, Websites.Amazon);
-                    if (!existsInDb)
-                    {
-                        await repository.SaveCookiesAsync(new CookieStore[] { new CookieStore("AmazonCookie", cookie) });
-                        await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(ApplicationLogBusiness.CreateInformationLog($"LoadCookiesJob cookies saved.", jobName, jobId, transactionId, start)));
-                    }
+                    continue;
                 }
-            }
-            else
-            {
-                await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(ApplicationLogBusiness.CreateInformationLog($"LoadCookiesJob couldn't get any cookies or exception occured.", jobName, jobId, transactionId, start)));
-            }
 
-            await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(ApplicationLogBusiness.CreateInformationLog($"LoadCookiesJob has finished as at '{DateTime.Now.ToString()}'.", jobName, jobId, transactionId, start)));
-            _logger.Log(LogLevel.Information, $"LoadCookiesJob has finished.");
-        }
-        catch (PuppeteerCrawlCookieException ex)
-        {
-            await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(ApplicationLogBusiness.CreateErrorLogFromException("PuppeteerCrawlCookieException is occured in LoadCookiesJob", jobName, jobId, transactionId, ex, start, DateTime.Now)));
+                var tasksForEachProduct = productsPerTask.Select(async eachProduct =>
+                {
+                    HttpClientResponse? response = await crawlerHttp.CrawlAsync(eachProduct);
+                    return response;
+                });
+                HttpClientResponse?[]? allResults = await Task.WhenAll(tasksForEachProduct);
+                if (allResults != null && allResults.Any())
+                {
+                    responses.AddRange((IEnumerable<HttpClientResponse>)allResults.Where(x => x != null).Select(x=>x));
+                }                
+            }
+            
+            await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(ApplicationLogBusiness.CreateInformationLog($"CrawlJobWithPuppeteerOnlyAmazon has finished as at '{DateTime.Now.ToString()}'.", jobName, jobId, transactionId, start)));
+            _logger.Log(LogLevel.Information, $"CrawlJobWithPuppeteerOnlyAmazon has finished.");
         }
         catch (PuppeteerDirectoryAccessException ex)
         {
@@ -93,7 +97,7 @@ public class LoadCookiesJob : IJob, IDisposable
         finally
         {
             DateTime finish = DateTime.Now;
-            ApplicationLog jobEndInformationLog = ApplicationLogBusiness.CreateInformationLog($"LoadCookiesJob is finished at {DateTime.Now.ToString()}.", jobName, jobId, transactionId, finish, finish - start);
+            ApplicationLog jobEndInformationLog = ApplicationLogBusiness.CreateInformationLog($"CrawlJobWithPuppeteerOnlyAmazon is finished at {DateTime.Now.ToString()}.", jobName, jobId, transactionId, finish, finish - start);
             await logJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(jobEndInformationLog), force: true);
             logJar.LogAdded -= LogJar_LogAdded;
             if (logDb is not null)

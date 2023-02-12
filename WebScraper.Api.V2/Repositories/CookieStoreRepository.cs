@@ -23,9 +23,15 @@ public class CookieStoreRepository : LogDbRepositoryBase
         await _dbContext.SaveChangesAsync();
     }
 
+    public async Task<bool> ExistsAsync(string cookie, Websites website)
+    {
+        bool exists = await _dbContext.CookieStores.Where(cookie => !cookie.IsUsed && cookie.WebSite == website).AnyAsync();
+        return exists;
+    }
+
     public async Task<CookieStore?> GetNotUsedCookieAsync(Websites website)
     {
-        CookieStore? _cookie = await _dbContext.CookieStores.Where(cookie => !cookie.IsUsed && cookie.WebSite == website).OrderBy((x) => Guid.NewGuid()).FirstOrDefaultAsync();
+        CookieStore? _cookie = await _dbContext.CookieStores.Where(cookie => /*!cookie.IsUsed &&*/ cookie.WebSite == website).OrderBy((x) => Guid.NewGuid()).FirstOrDefaultAsync();
         if (_cookie != null)
         {
             _cookie.IsUsed = true;

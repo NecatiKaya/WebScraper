@@ -19,4 +19,9 @@ public class CookieStore
     public DateTime CreateDate { get; set; } = DateTime.Now;
 
     public Websites WebSite { get; set; }
+
+    public override string ToString()
+    {
+        return CookieName + "=" + (string.IsNullOrWhiteSpace(CookieValue) ? "" : CookieValue);
+    }
 }

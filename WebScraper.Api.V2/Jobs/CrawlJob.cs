@@ -49,6 +49,7 @@ public class CrawlJob : IJob, IDisposable
             Logger = _logger,
             LoggingJar = logJar
         };
+
         //Crawler crawler = Crawler.Create(options, _flurlClientFac, configuration, _dbContext, logDb);
 
         try
@@ -94,8 +95,8 @@ public class CrawlJob : IJob, IDisposable
                         LoggingJar = logJar
                     };
 
-                    Crawler crawler = new Crawler();
-                    return crawler.CrawlAsync(eachProduct, _flurlClientFac, configuration, context, logDb);
+                    Crawler crawler = new Crawler(_flurlClientFac, configuration, context, logDb, eachProduct);
+                    return crawler.CrawlAsync();
                 });
                 await Task.WhenAll(tasksForEachProduct);
             }

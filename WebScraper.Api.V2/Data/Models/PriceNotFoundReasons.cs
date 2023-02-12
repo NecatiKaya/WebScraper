@@ -6,5 +6,6 @@ public enum PriceNotFoundReasons
     PriceIsNotOnThePage = 1,
     ExceptionOccured = 2,
     BotDetected = 3,
-    Found = 4,
+    TooManyRequest = 4,
+    Found = 5,
 }

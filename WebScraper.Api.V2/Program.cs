@@ -107,7 +107,7 @@ builder.Services.AddQuartz(q =>
         .ForJob(crawlJobKey)
         .WithIdentity("CrawlJob-Trigger")
         .WithSimpleSchedule(x => x
-            .WithInterval(TimeSpan.FromMinutes(45))
+            .WithInterval(TimeSpan.FromMinutes(2))
             .RepeatForever()));
 
     //JobKey cookieLoadJobJobKey = new JobKey("LoadCookiesJob");
@@ -116,7 +116,16 @@ builder.Services.AddQuartz(q =>
     //    .ForJob(cookieLoadJobJobKey)
     //    .WithIdentity("LoadCookiesJob-Trigger")
     //    .WithSimpleSchedule(x => x
-    //        .WithInterval(TimeSpan.FromMinutes(10))
+    //        .WithInterval(TimeSpan.FromSeconds(10))
+    //        .RepeatForever()));
+
+    //JobKey crawlJobWithPuppeteerOnlyAmazon = new JobKey("CrawlJobWithPuppeteerOnlyAmazon");
+    //q.AddJob<CrawlJobWithPuppeteerOnlyAmazon>(opts => opts.WithIdentity(crawlJobWithPuppeteerOnlyAmazon));
+    //q.AddTrigger(opts => opts
+    //    .ForJob(crawlJobWithPuppeteerOnlyAmazon)
+    //    .WithIdentity("CrawlJobWithPuppeteerOnlyAmazon-Trigger")
+    //    .WithSimpleSchedule(x => x
+    //        .WithInterval(TimeSpan.FromMinutes(45))
     //        .RepeatForever()));
 });
 

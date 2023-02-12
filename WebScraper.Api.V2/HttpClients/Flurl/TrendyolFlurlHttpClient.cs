@@ -77,7 +77,7 @@ public class TrendyolFlurlHttpClient : CrawlerHttpClientBase, IDisposable
             IFlurlRequest req = new FlurlRequest(product.TrendyolUrl);
 
             IFlurlResponse response = await req.GetAsync(cancellationToken, HttpCompletionOption.ResponseContentRead);
-            response.ResponseMessage.EnsureSuccessStatusCode();
+            //response.ResponseMessage.EnsureSuccessStatusCode();
             string html = await response.GetStringAsync();
 
             HttpClientCookie[]? cookies = GetCookies(response);
@@ -88,8 +88,39 @@ public class TrendyolFlurlHttpClient : CrawlerHttpClientBase, IDisposable
             ///TODO: transactionid parametresi güncellenmeli
             ApplicationLog applicationLog = ApplicationLogBusiness.CreateInformationLog($"Product ('{product.Id} - {product.Name}') has been crawled.", jobName, jobId, transactionId, start, DateTime.Now - start, product.TrendyolUrl, product.Id, GetRequestId(), html, JsonSerializer.Serialize(requestHeaders), JsonSerializer.Serialize(responseHeaders), null, response.StatusCode);
 
+            if (statusCode == HttpStatusCode.TooManyRequests)
+            {
+                throw new TooManyRequestException(Websites.Trendyol, product.TrendyolUrl, product.Id, null, html, requestHeaders.ToList(), responseHeaders.ToList());
+            }
+
             HttpClientResponse clientResponse = new HttpClientResponse(statusCode, statusCode.ToString(), html, GetRequestId(), requestHeaders, responseHeaders, cookies);
             return clientResponse;
+        }
+        catch (TooManyRequestException tooManyRequestEx)
+        {
+            ApplicationLog tooManyRequestsLog = await ApplicationLogBusiness.CreateErrorLogFromExceptionAsync("TooManyRequestException is occured in TrendyolFlurlHttpClient.CrawlAsync method",
+                Options?.LoggingJar?.JobName ?? "TrendyolFlurlHttpClient.CrawlAsync",
+                Options?.LoggingJar?.JobId ?? GetRequestId(),
+                transactionId,
+                tooManyRequestEx,
+                start,
+                DateTime.Now,
+                product.AmazonUrl,
+                GetRequestId(),
+                product.Id,
+                responseHtml : tooManyRequestEx.HttpResponse,
+                requestHeaders: JsonSerializer.Serialize(tooManyRequestEx.HttpRequestHeaders),
+                responseHeaders: JsonSerializer.Serialize(tooManyRequestEx.HttpResponseHeaders),
+                statusCode : 429);
+
+            if (Options is not null && Options.LoggingJar is not null)
+            {
+                await Options.LoggingJar.AddLogAndSaveIfNeedAsync(new ApplicationLogModel(tooManyRequestsLog));
+            }
+
+            HttpStatusCode? statusCode = tooManyRequestsLog.StatusCode.HasValue ? (HttpStatusCode)tooManyRequestsLog.StatusCode : null;
+            string? statusText = statusCode?.ToString() ?? null;
+            return new HttpClientResponse(statusCode, statusText, null, GetRequestId(), null, null, null, true);
         }
         catch (FlurlHttpTimeoutException timeoutEx)
         {

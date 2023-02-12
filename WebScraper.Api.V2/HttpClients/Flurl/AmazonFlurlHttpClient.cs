@@ -2,7 +2,6 @@
 using Flurl.Http.Configuration;
 using System.Net;
 using System.Text.Json;
-using System.Threading;
 using WebScraper.Api.V2.Business;
 using WebScraper.Api.V2.Data.Models;
 using WebScraper.Api.V2.Exceptions;
@@ -97,7 +96,7 @@ public sealed class AmazonFlurlHttpClient : CrawlerHttpClientBase, IDisposable
                     .WithHeader("referer", "https://www.amazon.com.tr");
 
             IFlurlResponse response = await req.GetAsync(cancellationToken, HttpCompletionOption.ResponseContentRead);
-            response.ResponseMessage.EnsureSuccessStatusCode();
+            //response.ResponseMessage.EnsureSuccessStatusCode();
             string html = await response.GetStringAsync();
 
             HttpClientCookie[]? cookies = GetCookies(response);
@@ -131,7 +130,10 @@ public sealed class AmazonFlurlHttpClient : CrawlerHttpClientBase, IDisposable
                 DateTime.Now,
                 product.AmazonUrl,
                 GetRequestId(),
-                product.Id);
+                product.Id,
+                responseHtml: botDetectedEx.HttpResponse,
+                requestHeaders: JsonSerializer.Serialize(botDetectedEx.HttpRequestHeaders),
+                responseHeaders: JsonSerializer.Serialize(botDetectedEx.HttpResponseHeaders));
 
             if (Options is not null && Options.LoggingJar is not null)
             {

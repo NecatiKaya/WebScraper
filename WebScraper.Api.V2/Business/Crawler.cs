@@ -11,65 +11,127 @@ namespace WebScraper.Api.V2.Business;
 
 public class Crawler
 {
-    //private readonly IFlurlClientFactory _flurlClientFac;
-    //private readonly ClientConfiguration _clientConfiguration;
-    //private readonly WebScraperDbContext _dbContext;
-    //private readonly WebScraperLogDbContext _logDbContext;
-    
-    //private Crawler(IFlurlClientFactory flurlClientFac, ClientConfiguration clientConfiguration, WebScraperDbContext context, WebScraperLogDbContext logDbContext)
+    private readonly IFlurlClientFactory _flurlClientFac;
+    private readonly ClientConfiguration _clientConfiguration;
+    private readonly WebScraperDbContext _dbContext;
+    private readonly WebScraperLogDbContext _logDbContext;
+    private readonly Product _product;
+
+    public Crawler(IFlurlClientFactory flurlClientFac, ClientConfiguration clientConfiguration, WebScraperDbContext dbContext, WebScraperLogDbContext logDbContext, Product product)
+    {
+        _flurlClientFac = flurlClientFac;
+        _clientConfiguration = clientConfiguration;
+        _dbContext = dbContext;
+        _logDbContext = logDbContext;
+        _product = product;
+    }
+
+    //public static Crawler Create(IFlurlClientFactory _flurlClientFac, ClientConfiguration _clientConfiguration, WebScraperDbContext _dbContext, WebScraperLogDbContext _logDbContext)
     //{
-    //    _flurlClientFac = flurlClientFac;
-    //    _clientConfiguration = clientConfiguration;
-    //    _dbContext = context;
-    //    _logDbContext = logDbContext;
+    //    return new Crawler(_flurlClientFac, _clientConfiguration, _dbContext, _logDbContext);
     //}
 
-    //public static Crawler Create(IFlurlClientFactory flurlClientFac, ClientConfiguration clientConfiguration, WebScraperDbContext context, WebScraperLogDbContext logDbContext)
-    //{
-    //    return new Crawler(flurlClientFac, clientConfiguration, context, logDbContext);
-    //}
+    public async Task<ScraperVisit?> CrawlAsync()
+    {
+        var crawlResponse = await InnerCrawlAsync();
 
-    public async Task<ScraperVisit?> CrawlAsync(Product product, IFlurlClientFactory flurlClientFac, ClientConfiguration clientConfiguration, WebScraperDbContext context, WebScraperLogDbContext logDbContext)
+        if (crawlResponse.Item1 != null && crawlResponse.Item1.AmazonPriceNotFoundReason == PriceNotFoundReasons.BotDetected) 
+        {
+            crawlResponse = await ReRunAmazon(crawlResponse.Item3);
+        }
+
+        if (crawlResponse.Item1 != null && crawlResponse.Item1.AmazonPriceNotFoundReason == PriceNotFoundReasons.BotDetected)
+        {
+            crawlResponse = await ReRunAmazon(crawlResponse.Item3);
+        }
+
+        //Trendyol TooMany Request Ex Handling. We will not try because it will be available after some time
+        //if (crawlResponse.Item1 != null && crawlResponse.Item1.TrendyolPriceNotFoundReason == PriceNotFoundReasons.BotDetected)
+        //{
+        //    crawlResponse = await InnerCrawlAsync(crawlResponse.Item2, null);
+        //    visits.Add(crawlResponse.Item1);
+        //}
+
+        //if (crawlResponse.Item1 != null && crawlResponse.Item1.TrendyolPriceNotFoundReason == PriceNotFoundReasons.BotDetected)
+        //{
+        //    crawlResponse = await InnerCrawlAsync(crawlResponse.Item2, null);
+        //    visits.Add(crawlResponse.Item1);
+        //}
+
+        return crawlResponse.Item1;
+    }
+
+    private async Task<(ScraperVisit?, HttpClientResponse?, HttpClientResponse?)> InnerCrawlAsync(HttpClientResponse? existingAmazonResponse = null, HttpClientResponse? existingTrendyolResponse = null, 
+        string? amazonCookie = null, string? trendyolCookie = null, string? userAgent = null)
     {
         DateTime start = DateTime.Now;
-        ApplicationLogModelJar? logModelJar = clientConfiguration?.LoggingJar;
+        ApplicationLogModelJar? logModelJar = _clientConfiguration?.LoggingJar;
 
-        CrawlerHttpClientBase amazonCrawler = new AmazonFlurlHttpClient(flurlClientFac, clientConfiguration, context, logDbContext);
-        CrawlerHttpClientBase trendyolCrawler = new TrendyolFlurlHttpClient(flurlClientFac, clientConfiguration, context, logDbContext);
+        CrawlerHttpClientBase amazonCrawler = new AmazonFlurlHttpClient(_flurlClientFac, _clientConfiguration, _dbContext, _logDbContext);
+        CrawlerHttpClientBase trendyolCrawler = new TrendyolFlurlHttpClient(_flurlClientFac, _clientConfiguration, _dbContext, _logDbContext);
 
         amazonCrawler.Configure();
         trendyolCrawler.Configure();
 
-        ScraperVisitRepository scraperVisitRepository = new ScraperVisitRepository(context);
+        ScraperVisitRepository scraperVisitRepository = new ScraperVisitRepository(_dbContext);
         ScraperVisit scraperVisit = new ScraperVisit()
         {
             NeedToNotify = false,
             Notified = false,
-            ProductId = product.Id,
+            ProductId = _product.Id,
             StartDate = DateTime.Now,
             JobId = logModelJar?.JobId
         };
 
         try
         {
-            HttpClientResponse? amazonResponse = await amazonCrawler.CrawlAsync(product);
-            HttpClientResponse? trendyolResponse = await trendyolCrawler.CrawlAsync(product);
+            HttpClientResponse? amazonResponse = existingAmazonResponse;
+            HttpClientResponse? trendyolResponse = existingTrendyolResponse;
+            if (amazonResponse == null)
+            {
+                amazonResponse = await amazonCrawler.CrawlAsync(_product, amazonCookie, userAgent);
+            }
+            if (trendyolResponse == null)
+            {
+                trendyolResponse = await trendyolCrawler.CrawlAsync(_product, trendyolCookie, userAgent);
+            }
 
             DateTime nowDate = DateTime.Now;
             scraperVisit.EndDate = nowDate;
-            scraperVisit.RequestedPriceDifferenceAsAmount = product.RequestedPriceDifferenceWithAmount;
-            scraperVisit.RequestedPriceDifferenceAsPercentage = product.RequestedPriceDifferenceWithPercentage;
+            scraperVisit.RequestedPriceDifferenceAsAmount = _product.RequestedPriceDifferenceWithAmount;
+            scraperVisit.RequestedPriceDifferenceAsPercentage = _product.RequestedPriceDifferenceWithPercentage;
 
-            if (amazonResponse is not null && amazonResponse.Value.IsBotDetected)
+            if (amazonResponse is not null)
             {
-                scraperVisit.AmazonPriceNotFoundReason = PriceNotFoundReasons.BotDetected;
+                if (amazonResponse.Value.IsBotDetected)
+                {
+                    scraperVisit.AmazonPriceNotFoundReason = PriceNotFoundReasons.BotDetected;
+                }
+                else
+                {
+                    scraperVisit.AmazonPriceNotFoundReason = amazonResponse.HasSuccessFullStatusCode() ? PriceNotFoundReasons.Initial : PriceNotFoundReasons.ExceptionOccured;
+                }
             }
-            else 
+            else
             {
-                scraperVisit.AmazonPriceNotFoundReason = amazonResponse.HasSuccessFullStatusCode() ? PriceNotFoundReasons.Initial : PriceNotFoundReasons.ExceptionOccured;
+                scraperVisit.AmazonPriceNotFoundReason = PriceNotFoundReasons.ExceptionOccured;
             }
-            
-            scraperVisit.TrendyolPriceNotFoundReason = trendyolResponse.HasSuccessFullStatusCode() ? PriceNotFoundReasons.Initial : PriceNotFoundReasons.ExceptionOccured;
+
+            if (trendyolResponse is not null)
+            {
+                if (trendyolResponse.Value.IsBotDetected)
+                {
+                    scraperVisit.TrendyolPriceNotFoundReason = PriceNotFoundReasons.TooManyRequest;
+                }
+                else
+                {
+                    scraperVisit.TrendyolPriceNotFoundReason = trendyolResponse.HasSuccessFullStatusCode() ? PriceNotFoundReasons.Initial : PriceNotFoundReasons.ExceptionOccured;
+                }
+            }
+            else
+            {
+                scraperVisit.TrendyolPriceNotFoundReason = PriceNotFoundReasons.ExceptionOccured;
+            }
 
             IHtmlParser? amazonParser = amazonResponse.HasValue && amazonResponse.Value.ContentHtml is not null ? new AmazonParser(amazonResponse.Value.ContentHtml) : null;
             IHtmlParser? trendyolParser = trendyolResponse.HasValue && trendyolResponse.Value.ContentHtml is not null ? new TrendyolParser(trendyolResponse.Value.ContentHtml) : null;
@@ -116,14 +178,14 @@ public class Crawler
                 decimal? calculatedDifferenceWithAmount = trendyolPrice.CurrentPrice - amazonPrice.CurrentPrice;
                 decimal? calculatedDifferenceWithPercentage = calculatedDifferenceWithAmount * 100 / trendyolPrice.CurrentPrice;
 
-                if (product.RequestedPriceDifferenceWithAmount is not null)
+                if (_product.RequestedPriceDifferenceWithAmount is not null)
                 {
-                    needToNotify = calculatedDifferenceWithAmount >= product.RequestedPriceDifferenceWithAmount;
+                    needToNotify = calculatedDifferenceWithAmount >= _product.RequestedPriceDifferenceWithAmount;
                 }
 
-                if (product.RequestedPriceDifferenceWithPercentage is not null)
+                if (_product.RequestedPriceDifferenceWithPercentage is not null)
                 {
-                    needToNotify = calculatedDifferenceWithPercentage >= product.RequestedPriceDifferenceWithPercentage;
+                    needToNotify = calculatedDifferenceWithPercentage >= _product.RequestedPriceDifferenceWithPercentage;
                 }
 
                 scraperVisit.CalculatedPriceDifferenceAsPercentage = calculatedDifferenceWithPercentage;
@@ -132,8 +194,7 @@ public class Crawler
             }
 
             await scraperVisitRepository.AddVisitsAsync(new ScraperVisit[] { scraperVisit });
-
-            return scraperVisit;
+            return (scraperVisit, amazonResponse, trendyolResponse);
         }
         catch (Exception ex)
         {            
@@ -149,6 +210,22 @@ public class Crawler
             }
         }
 
-        return null;
+        return (null, null, null);
+    }
+
+    private async Task<(ScraperVisit?, HttpClientResponse?, HttpClientResponse?)> ReRunAmazon(HttpClientResponse? trendyolResponse)
+    {
+        CookieStoreRepository cookieStoreRepository = new CookieStoreRepository(_logDbContext);
+        UserAgentStringRepository userAgentStringRepository = new UserAgentStringRepository(_logDbContext);
+
+        CookieStore? amazonCookie = await cookieStoreRepository.GetNotUsedCookieAsync(Websites.Amazon);
+        UserAgentString ua = await userAgentStringRepository.GetRandomUserAgentAsync();
+        (ScraperVisit?, HttpClientResponse?, HttpClientResponse?) crawlResponse = await InnerCrawlAsync(null, trendyolResponse, amazonCookie?.CookieValue, ua.Agent);
+        return crawlResponse;
+    }
+
+    private async Task UpdateVisitAsync(int visitId)
+    {
+
     }
 }

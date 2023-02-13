@@ -10,6 +10,8 @@ using WebScraper.Api.V2.Repositories;
 
 namespace WebScraper.Api.V2.Controllers;
 
+[ApiController]
+[Route("[controller]")]
 public class ProductsController : ControllerBase
 {
     private readonly ILogger<ProductsController> _logger;
@@ -128,7 +130,7 @@ public class ProductsController : ControllerBase
         return Ok(serverResponse);
     }
 
-    public async Task UploadProductFile(IFormFile file)
+    private async Task UploadProductFile(IFormFile file)
     {
         if (file is null)
         {

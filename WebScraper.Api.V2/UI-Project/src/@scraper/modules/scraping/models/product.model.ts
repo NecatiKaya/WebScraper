@@ -8,7 +8,7 @@ export interface ProductModel {
     trendyolUrl: string;
     amazonUrl: string;
     requestedPriceDiffrenceWithAmount?: number;
-    RequestedPriceDiffrenceWithPercentage?: number;
+    requestedPriceDiffrenceWithPercentage?: number;
     isDeleted: boolean;
     scraperVisits: ScraperVisit[];
 }

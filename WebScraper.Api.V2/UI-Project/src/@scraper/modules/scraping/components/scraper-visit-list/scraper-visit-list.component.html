@@ -5,8 +5,9 @@
 
     <div>
         <table mat-table [dataSource]="data" class="mat-elevation-z8" matSort matSortActive="visitDate"
-            matSortDisableClear matSortDirection="desc">
+            matSortDisableClear matSortDirection="desc" multiTemplateDataRows>
 
+            <!-- 
             <ng-container matColumnDef="visitDate" style="width: 150px;">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>Visit Date</th>
                 <td mat-cell *matCellDef="let row">{{row.visitDate | date: 'dd/MM/yyyy HH:mm'}}</td>
@@ -74,6 +75,15 @@
                 <td mat-cell *matCellDef="let row">{{row.calculatedPriceDifferenceAsAmount ?? "-"}}</td>
             </ng-container>
 
+            <ng-container matColumnDef="amazonPriceNotFoundReason">
+                <th mat-header-cell *matHeaderCellDef>Amazoun Price Reason</th>
+                <td mat-cell *matCellDef="let row">{{row.amazonPriceNotFoundReason ?? "-"}}</td>
+            </ng-container>
+            <ng-container matColumnDef="trendyolPriceNotFoundReason">
+                <th mat-header-cell *matHeaderCellDef>Trendyol Price Reason</th>
+                <td mat-cell *matCellDef="let row">{{row.trendyolPriceNotFoundReason ?? "-"}}</td>
+            </ng-container>
+
             <ng-container matColumnDef="needToNotify">
                 <th mat-header-cell *matHeaderCellDef>Need To Notify</th>
                 <td mat-cell *matCellDef="let row">
@@ -91,7 +101,169 @@
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr> 
+        -->
+
+            <!-- 'visitDate', 'productName', 'amazonCurrentPrice', 'trendyolCurrentPrice', 'calculatedPriceDifferenceAsPercentage', 'calculatedPriceDifferenceAsAmount',
+        'amazonPriceNotFoundReason', 'trendyolPriceNotFoundReason' -->
+
+            <ng-container matColumnDef="visitDate">
+                <th mat-header-cell *matHeaderCellDef> Visit Date </th>
+                <td mat-cell *matCellDef="let element"> {{element["visitDate"]}} </td>
+            </ng-container>
+            <ng-container matColumnDef="productName">
+                <th mat-header-cell *matHeaderCellDef> Product Name </th>
+                <td mat-cell *matCellDef="let element"> {{element["productName"]}} </td>
+            </ng-container>
+            <ng-container matColumnDef="amazonCurrentPrice">
+                <th mat-header-cell *matHeaderCellDef> Amazon Current Price </th>
+                <td mat-cell *matCellDef="let element"> {{element["amazonCurrentPrice"]}} </td>
+            </ng-container>
+            <ng-container matColumnDef="trendyolCurrentPrice">
+                <th mat-header-cell *matHeaderCellDef> Trendyol Current Price </th>
+                <td mat-cell *matCellDef="let element"> {{element["trendyolCurrentPrice"]}} </td>
+            </ng-container>
+            <ng-container matColumnDef="calculatedPriceDifferenceAsPercentage">
+                <th mat-header-cell *matHeaderCellDef> Difference As Percentage </th>
+                <td mat-cell *matCellDef="let element"> {{element["calculatedPriceDifferenceAsPercentage"]}} </td>
+            </ng-container>
+            <ng-container matColumnDef="calculatedPriceDifferenceAsAmount">
+                <th mat-header-cell *matHeaderCellDef> Difference As Amount </th>
+                <td mat-cell *matCellDef="let element"> {{element["calculatedPriceDifferenceAsAmount"]}} </td>
+            </ng-container>
+            
+            <!-- <ng-container matColumnDef="amazonPriceNotFoundReason">
+                <th mat-header-cell *matHeaderCellDef> Amazon Price Reason </th>
+                <td mat-cell *matCellDef="let element"> {{element["amazonPriceNotFoundReasonText"]}} </td>
+            </ng-container>
+            <ng-container matColumnDef="trendyolPriceNotFoundReason">
+                <th mat-header-cell *matHeaderCellDef> Trendyol Price Reason </th>
+                <td mat-cell *matCellDef="let element"> {{element["trendyolPriceNotFoundReasonText"]}} </td>
+            </ng-container> -->
+
+            <ng-container matColumnDef="expand">
+                <th mat-header-cell *matHeaderCellDef aria-label="row actions">&nbsp;</th>
+                <td mat-cell *matCellDef="let element">
+                    <button mat-icon-button aria-label="expand row"
+                        (click)="(expandedElement = expandedElement === element ? null : element); $event.stopPropagation()">
+                        <mat-icon *ngIf="expandedElement !== element">keyboard_arrow_down</mat-icon>
+                        <mat-icon *ngIf="expandedElement === element">keyboard_arrow_up</mat-icon>
+                    </button>
+                </td>
+            </ng-container>
+
+            <!-- Expanded Content Column - The detail row is made up of this one column that spans across all columns -->
+            <ng-container matColumnDef="expandedDetail">
+                <td mat-cell *matCellDef="let element" [attr.colspan]="allColumnsWithExpand.length">
+                    <div class="example-element-detail"
+                        [@detailExpand]="element === expandedElement ? 'expanded' : 'collapsed'">
+                        <table style="width: 100%; border: 1px solid black; margin:20px;">
+                            <tr>
+                                <td style="width: 60%;">
+                                    Amazon Previous Price
+                                </td>
+                                <td>
+                                    {{element.amazonPreviousPrice}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Amazon Current Discount As Amount
+                                </td>
+                                <td>
+                                    {{element.amazonCurrentDiscountAsAmount}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Amazon Current Discount As Percentage
+                                </td>
+                                <td>
+                                    {{element.amazonCurrentDiscountAsPercentage}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Trendyol Previous Price
+                                </td>
+                                <td>
+                                    {{element.trendyolPreviousPrice}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Trendyol Current Discount As Amount
+                                </td>
+                                <td>
+                                    {{element.trendyolCurrentDiscountAsAmount}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Trendyol Current Discount As Percentage
+                                </td>
+                                <td>
+                                    {{element.trendyolCurrentDiscountAsPercentage}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Requested Price Difference As Percentage
+                                </td>
+                                <td>
+                                    {{element.requestedPriceDifferenceAsPercentage}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Requested Price Difference As Amount
+                                </td>
+                                <td>
+                                    {{element.requestedPriceDifferenceAsAmount}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Amazon Price Not Found Reason
+                                </td>
+                                <td>
+                                    {{element.amazonPriceNotFoundReason}} - {{element.amazonPriceNotFoundReasonText}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Trendyol Price Not Found Reason
+                                </td>
+                                <td>
+                                    {{element.trendyolPriceNotFoundReason}} - {{element.trendyolPriceNotFoundReasonText}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Need To Notify
+                                </td>
+                                <td>
+                                    {{element.needToNotify}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Notified
+                                </td>
+                                <td>
+                                    {{element.notified}}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="allColumnsWithExpand"></tr>
+            <tr mat-row *matRowDef="let element; columns: allColumnsWithExpand;" class="example-element-row"
+                [class.example-expanded-row]="expandedElement === element"
+                (click)="expandedElement = expandedElement === element ? null : element">
+            </tr>
+            <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="example-detail-row"></tr>
         </table>
     </div>
 

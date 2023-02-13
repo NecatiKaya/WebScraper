@@ -223,9 +223,4 @@ public class Crawler
         (ScraperVisit?, HttpClientResponse?, HttpClientResponse?) crawlResponse = await InnerCrawlAsync(null, trendyolResponse, amazonCookie?.CookieValue, ua.Agent);
         return crawlResponse;
     }
-
-    private async Task UpdateVisitAsync(int visitId)
-    {
-
-    }
 }

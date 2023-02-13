@@ -25,7 +25,7 @@ export class ProductDefinitionComponent implements OnInit, OnDestroy {
         trendyolUrl: ['', [Validators.required, Validators.minLength(5)]],
         amazonUrl: ['', [Validators.required, Validators.minLength(5)]],
         requestedPriceDiffrenceWithAmount: [null],
-        RequestedPriceDiffrenceWithPercentage: [null],
+        requestedPriceDiffrenceWithPercentage: [null],
     });
 
     entityId!: number;
@@ -65,7 +65,7 @@ export class ProductDefinitionComponent implements OnInit, OnDestroy {
     }
 
     public get requestedPriceDiffrenceWithPercentControl(): FormControl {
-        return this.productForm.controls['RequestedPriceDiffrenceWithPercentage'] as FormControl;
+        return this.productForm.controls['requestedPriceDiffrenceWithPercentage'] as FormControl;
     }
 
     public get isUpdate(): boolean {
@@ -92,7 +92,7 @@ export class ProductDefinitionComponent implements OnInit, OnDestroy {
                         name: data.name,
                         amazonUrl: data.amazonUrl,
                         requestedPriceDiffrenceWithAmount: data.requestedPriceDiffrenceWithAmount,
-                        RequestedPriceDiffrenceWithPercentage: data.RequestedPriceDiffrenceWithPercentage,
+                        requestedPriceDiffrenceWithPercentage: data.requestedPriceDiffrenceWithPercentage,
                         trendyolUrl: data.trendyolUrl
                     });
                 }
@@ -136,7 +136,7 @@ export class ProductDefinitionComponent implements OnInit, OnDestroy {
             trendyolUrl: this.trendyolUrlControl.value,
             amazonUrl: this.amazonUrlControl.value,
             requestedPriceDiffrenceWithAmount: !this.requestedPriceDiffrenceWithAmountControl.value ? null : this.requestedPriceDiffrenceWithAmountControl.value,
-            RequestedPriceDiffrenceWithPercentage: !this.requestedPriceDiffrenceWithPercentControl.value ? null : this.requestedPriceDiffrenceWithPercentControl.value
+            requestedPriceDiffrenceWithPercentage: !this.requestedPriceDiffrenceWithPercentControl.value ? null : this.requestedPriceDiffrenceWithPercentControl.value
         };
         const updateRequest = this.scraperApi.updateProduct(request);
         const createRequest = this.scraperApi.createProduct(request);

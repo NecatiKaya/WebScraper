@@ -9,8 +9,8 @@ import { ScraperVisit } from '../models/scraper-visit.model';
 @Injectable()
 export class ScraperApi {
 
-    private readonly scraperApiUrl = 'https://localhost:7037';
-    //private readonly scraperApiUrl = 'http://localhost:5037';
+    private readonly scraperApiUrl = 'https://localhost:7079';
+    //private readonly scraperApiUrl = 'http://localhost:5179';
 
     constructor(private httpClient: HttpClient) {
 
@@ -28,7 +28,7 @@ export class ScraperApi {
         trendyolUrl: string;
         amazonUrl: string;
         requestedPriceDiffrenceWithAmount: number;
-        RequestedPriceDiffrenceWithPercentage: number;
+        requestedPriceDiffrenceWithPercentage: number;
 
     }): Observable<ServerResponseBase<ProductModel>> {
         return this.httpClient.post<ServerResponseBase<ProductModel>>(this.scraperApiUrl + '/products', request);
@@ -42,7 +42,7 @@ export class ScraperApi {
         trendyolUrl: string;
         amazonUrl: string;
         requestedPriceDiffrenceWithAmount?: number;
-        RequestedPriceDiffrenceWithPercentage?: number;
+        requestedPriceDiffrenceWithPercentage?: number;
     }): Observable<ServerResponseBase<ProductModel>> {
         return this.httpClient.patch<ServerResponseBase<ProductModel>>(this.scraperApiUrl + '/products', request);
     }

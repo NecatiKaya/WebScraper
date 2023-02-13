@@ -51,4 +51,20 @@ public class GetScraperVisitDto
     public PriceNotFoundReasons? AmazonPriceNotFoundReason { get; set; }
 
     public PriceNotFoundReasons? TrendyolPriceNotFoundReason { get; set; }
+
+    public string? AmazonPriceNotFoundReasonText 
+    {
+        get
+        {
+            return AmazonPriceNotFoundReason?.ToString();
+        }
+    }
+
+    public string? TrendyolPriceNotFoundReasonText
+    {
+        get
+        {
+            return TrendyolPriceNotFoundReason?.ToString();
+        }
+    }
 }

@@ -7,6 +7,7 @@ using WebScraper.Api.V2.Business;
 using WebScraper.Api.V2.Business.Email;
 using WebScraper.Api.V2.Data.Models;
 using WebScraper.Api.V2.Jobs;
+using WebScraper.Api.V2.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 string? connectionString = builder.Configuration.GetConnectionString("default");
@@ -44,8 +45,9 @@ if (emailConfig is not null)
     builder.Services.AddSingleton(emailConfig);
 }
 
+builder.Services.AddScoped<ProductRepository>();
+builder.Services.AddScoped<ScraperVisitRepository>();
 builder.Services.AddScoped<IMailSender, MailSender>();
-
 builder.Services.AddScoped<AlertingBusiness, AlertingBusiness>();
 
 builder.Services.AddSingleton<IFlurlClientFactory, PerBaseUrlFlurlClientFactory>();
@@ -101,14 +103,14 @@ builder.Services.AddQuartz(q =>
 {
     q.UseMicrosoftDependencyInjectionJobFactory();
 
-    JobKey crawlJobKey = new JobKey("CrawlJob");
-    q.AddJob<CrawlJob>(opts => opts.WithIdentity(crawlJobKey));
-    q.AddTrigger(opts => opts
-        .ForJob(crawlJobKey)
-        .WithIdentity("CrawlJob-Trigger")
-        .WithSimpleSchedule(x => x
-            .WithInterval(TimeSpan.FromMinutes(2))
-            .RepeatForever()));
+    //JobKey crawlJobKey = new JobKey("CrawlJob");
+    //q.AddJob<CrawlJob>(opts => opts.WithIdentity(crawlJobKey));
+    //q.AddTrigger(opts => opts
+    //    .ForJob(crawlJobKey)
+    //    .WithIdentity("CrawlJob-Trigger")
+    //    .WithSimpleSchedule(x => x
+    //        .WithInterval(TimeSpan.FromMinutes(15))
+    //        .RepeatForever()));
 
     //JobKey cookieLoadJobJobKey = new JobKey("LoadCookiesJob");
     //q.AddJob<LoadCookiesJob>(opts => opts.WithIdentity(cookieLoadJobJobKey));

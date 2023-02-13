@@ -16,12 +16,11 @@ import { shortenText } from '../../utilities';
     selector: 'product-definition',
     templateUrl: './scraper-visit-list.component.html',
     styleUrls: ['./scraper-visit-list.component.scss'],
-    encapsulation: ViewEncapsulation.None,
     animations: [
         trigger('detailExpand', [
-            state('void', style({ height: '0px', minHeight: '0', visibility: 'hidden' })),
-            state('*', style({ height: '*', visibility: 'visible' })),
-            transition('void <=> *', animate('225ms cubic-bezier(0.4, 0.0, 0.2, 1)')),
+            state('collapsed', style({ height: '0px', minHeight: '0' })),
+            state('expanded', style({ height: '*' })),
+            transition('expanded <=> collapsed', animate('225ms cubic-bezier(0.4, 0.0, 0.2, 1)')),
         ]),
     ],
 })
@@ -36,10 +35,17 @@ export class ScraperVisitListComponent implements OnInit, OnDestroy, AfterViewIn
     @ViewChild(MatSort) sort!: MatSort;
 
     // eslint-disable-next-line max-len
-    displayedColumns: string[] = [
-        'visitDate', 'productName', 'amazonPreviousPrice', 'amazonCurrentPrice', 'amazonCurrentDiscountAsAmount', 'amazonCurrentDiscountAsPercentage', 'trendyolPreviousPrice',
-        'trendyolCurrentPrice', 'trendyolCurrentDiscountAsAmount', 'trendyolCurrentDiscountAsPercentage', 'requestedPriceDifferenceAsPercentage',
-        'requestedPriceDifferenceAsAmount', 'calculatedPriceDifferenceAsPercentage', 'calculatedPriceDifferenceAsAmount', 'needToNotify', 'notified'];
+    // allColumns: string[] = [
+    //     'visitDate', 'productName', 'amazonPreviousPrice', 'amazonCurrentPrice', 'amazonCurrentDiscountAsAmount', 'amazonCurrentDiscountAsPercentage', 'trendyolPreviousPrice',
+    //     'trendyolCurrentPrice', 'trendyolCurrentDiscountAsAmount', 'trendyolCurrentDiscountAsPercentage', 'requestedPriceDifferenceAsPercentage',
+    //     'requestedPriceDifferenceAsAmount', 'calculatedPriceDifferenceAsPercentage', 'calculatedPriceDifferenceAsAmount',
+    //     'amazonPriceNotFoundReason', 'trendyolPriceNotFoundReason', 'needToNotify', 'notified'];
+
+
+    allColumns: string[] = [
+        'visitDate', 'productName', 'amazonCurrentPrice', 'trendyolCurrentPrice', 'calculatedPriceDifferenceAsPercentage', 'calculatedPriceDifferenceAsAmount'];
+
+    allColumnsWithExpand: string[] = [...this.allColumns, 'expand'];
 
     data: ScraperVisit[] = [];
     isLoading = false;

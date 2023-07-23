@@ -102,30 +102,30 @@ builder.Services.AddQuartz(q =>
 {
     q.UseMicrosoftDependencyInjectionJobFactory();
 
-    JobKey crawlJobKey = new JobKey("CrawlJob");
-    q.AddJob<CrawlJob>(opts => opts.WithIdentity(crawlJobKey));
-    q.AddTrigger(opts => opts
-        .ForJob(crawlJobKey)
-        .WithIdentity("CrawlJob-Trigger")
-        .WithSimpleSchedule(x => x
-            .WithInterval(TimeSpan.FromMinutes(45))
-            .RepeatForever()));
+    //JobKey crawlJobKey = new JobKey("CrawlJob");
+    //q.AddJob<CrawlJob>(opts => opts.WithIdentity(crawlJobKey));
+    //q.AddTrigger(opts => opts
+    //    .ForJob(crawlJobKey)
+    //    .WithIdentity("CrawlJob-Trigger")
+    //    .WithSimpleSchedule(x => x
+    //        .WithInterval(TimeSpan.FromMinutes(45))
+    //        .RepeatForever()));
 
-    JobKey cookieLoadJobJobKey = new JobKey("LoadCookiesJob");
-    q.AddJob<LoadCookiesJob>(opts => opts.WithIdentity(cookieLoadJobJobKey));
-    q.AddTrigger(opts => opts
-        .ForJob(cookieLoadJobJobKey)
-        .WithIdentity("LoadCookiesJob-Trigger")
-        .WithSimpleSchedule(x => x
-            .WithInterval(TimeSpan.FromMinutes(2))
-            .RepeatForever()));
+    //JobKey cookieLoadJobJobKey = new JobKey("LoadCookiesJob");
+    //q.AddJob<LoadCookiesJob>(opts => opts.WithIdentity(cookieLoadJobJobKey));
+    //q.AddTrigger(opts => opts
+    //    .ForJob(cookieLoadJobJobKey)
+    //    .WithIdentity("LoadCookiesJob-Trigger")
+    //    .WithSimpleSchedule(x => x
+    //        .WithInterval(TimeSpan.FromMinutes(2))
+    //        .RepeatForever()));
 
-    q.AddTrigger(opts => opts
-        .ForJob(cookieLoadJobJobKey)
-        .WithIdentity("LoadCookiesJob-Trigger2")
-        .WithSimpleSchedule(x => x
-            .WithInterval(TimeSpan.FromMinutes(2))
-            .RepeatForever()));
+    //q.AddTrigger(opts => opts
+    //    .ForJob(cookieLoadJobJobKey)
+    //    .WithIdentity("LoadCookiesJob-Trigger2")
+    //    .WithSimpleSchedule(x => x
+    //        .WithInterval(TimeSpan.FromMinutes(2))
+    //        .RepeatForever()));
 });
 
 builder.Services.AddQuartzHostedService(q =>

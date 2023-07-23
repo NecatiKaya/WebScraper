@@ -18,7 +18,8 @@
 
         public bool IsValid()
         {
-            return Brand is not null && Brand.Length > 0 &&
+            return 
+                //Brand is not null && Brand.Length > 0 &&
                 Name is not null && Name.Length > 5 &&
                 Barcode is not null && Barcode.Length > 5 &&                
                 Asin is not null && Asin.Length > 5 &&                

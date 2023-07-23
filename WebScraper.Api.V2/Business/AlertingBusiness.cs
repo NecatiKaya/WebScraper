@@ -23,11 +23,11 @@ public class AlertingBusiness
         var items = await repository.GetNotNotifiedVisits();
 
         string rowTemplateFileName = "PriceItemTemplate.txt";
-        string rowFilepath = Path.Combine(Environment.CurrentDirectory, @"Assets\EmailTemplates\", rowTemplateFileName);
+        string rowFilepath = Path.Combine(Environment.CurrentDirectory, "Assets", "EmailTemplates", rowTemplateFileName);
         string rowFileContent = System.IO.File.ReadAllText(rowFilepath, System.Text.Encoding.UTF8);
 
         string htlmTemplateFileName = "PriceAlertTemplate.txt";
-        string hmtlFilepath = Path.Combine(Environment.CurrentDirectory, @"Assets\EmailTemplates\", htlmTemplateFileName);
+        string hmtlFilepath = Path.Combine(Environment.CurrentDirectory, "Assets", "EmailTemplates", htlmTemplateFileName);
         string htmlFileContent = System.IO.File.ReadAllText(hmtlFilepath, System.Text.Encoding.UTF8);
 
         StringBuilder rowTemplateBuilder = new StringBuilder();

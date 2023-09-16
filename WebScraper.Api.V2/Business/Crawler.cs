@@ -188,6 +188,10 @@ public class Crawler
                     needToNotify = calculatedDifferenceWithPercentage >= _product.RequestedPriceDifferenceWithPercentage;
                 }
 
+                if (calculatedDifferenceWithPercentage is not null)
+                {
+                    scraperVisit.CalculatedPriceDifferenceAsPercentage = Math.Round(calculatedDifferenceWithPercentage.Value, 4);
+                }
                 scraperVisit.CalculatedPriceDifferenceAsPercentage = calculatedDifferenceWithPercentage;
                 scraperVisit.CalculatedPriceDifferenceAsAmount = calculatedDifferenceWithAmount;
                 scraperVisit.NeedToNotify = needToNotify;

@@ -156,4 +156,6 @@ app.MapControllers();
 
 System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
+Thread.CurrentThread.CurrentUICulture = new System.Globalization.CultureInfo("tr-TR");
+Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("tr-TR");
 app.Run();
